@@ -60,6 +60,8 @@ serial_dev (.clk(clk), .rst(rst), .rx(rx), .tx(tx), .rts(rts), .cts(cts),
             .tx_transaction(tx_transaction), .tx_data(tx_data), .tx_data_ready(tx_data_ready), 
             .tx_data_copied(tx_data_copied), .tx_busy(tx_busy));
 
+//todo(UMV): add global board reset ....
+            
 always @(posedge clk)
 begin
     if (rst)
