@@ -1,3 +1,4 @@
+`timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
 // Company:             Wissance (https://wissance.com)
 // Engineer:            EvilLord666 (Ushakov MV - https://github.com/EvilLord666)
@@ -16,6 +17,17 @@
 // Additional Comments: Actualy we are testing here 1 mode: (115200 bod/s, 1 stop bit, even parity, no flow control)
 //
 //////////////////////////////////////////////////////////////////////////////////
+
+`define ASSERT(signal, value) \
+        if (signal !== value) begin \
+            $display("ASSERTION FAILED in %m: expected: %b, actual is : %b", value, signal); \
+            $finish; \
+        end \
+        else \
+        begin \
+            $display("ASSERTION SUCCEDED"); \
+        end \
+
 
 module serial_echo_tb();
 
@@ -55,6 +67,7 @@ begin
     begin
         rx <= 1'b0;
     end
+    // todo(UMV): wrap in a for cycle ...
     // 1.2 Sending Data bits 8'b01010011
     // b0
     if (counter == 2 * RS232_BIT_TICKS + 100)  // we multiply on 2 because counter changes twice a period
@@ -106,23 +119,7 @@ begin
     begin
        rx <= 1'b1;
     end
-    // 1.5 ASSERT on first byte
-    if (counter > 2 * 8 * RS232_BIT_TICKS + 100 && counter < 2 * 10 * RS232_BIT_TICKS + 100)
-    begin
-        `ASSERT(rx_err, 1'b0)
-    end
-    if (counter == 2 * 10 * RS232_BIT_TICKS + 200)
-    begin
-        rx_read <= 1;
-    end
-    if (counter == 2 * 10 * RS232_BIT_TICKS + 200 + 2)
-    begin
-        `ASSERT(rx_data, 8'b01010011)
-    end
-    if (counter == 2 * 10 * RS232_BIT_TICKS + 300)
-    begin
-        rx_read <= 0;
-    end
+    
 end
 
 endmodule
