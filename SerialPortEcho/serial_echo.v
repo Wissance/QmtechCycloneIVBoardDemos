@@ -92,13 +92,6 @@ begin
                     serial_data_exchange_state <= SERIAL_INPUT_DATA_PROCESSING_STATE;
                     rx_read <= 1'b0;
                 end
-                /*delay_counter <= delay_counter + 1;
-                if (delay_counter == DEFAULT_PROCESSES_DELAY_CYCLES)
-                begin
-                    rx_read <= 1'b1;
-                    delay_counter <= 0;
-                    serial_data_exchange_state <= SERIAL_INPUT_DATA_CLR_STATE;
-                end*/
             end
             SERIAL_INPUT_DATA_PROCESSING_STATE:
             begin
@@ -117,12 +110,12 @@ begin
                 if (delay_counter == DEFAULT_PROCESSES_DELAY_CYCLES)
                 begin
                     rx_read <= 1'b0;
-                    tx_transaction <= 1'b1;
                     serial_data_exchange_state <= SERIAL_OUTPUT_DATA_READY_STATE;
                 end
             end
             SERIAL_OUTPUT_DATA_READY_STATE:
             begin
+                tx_transaction <= 1'b1;
                 delay_counter <= delay_counter + 1;
                 tx_data <= data_buffer;
                 if (delay_counter == DEFAULT_PROCESSES_DELAY_CYCLES)
