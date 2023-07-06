@@ -1,2 +1,19 @@
-# QmtechCycloneIVBoardDemos
-A set of additional non-official demo projects for Cyclone4 (EP4CE15F23C8) core boards
+## QmtechCycloneIVBoardDemos
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/wissance/QmtechCycloneIVBoardDemos?style=plastic) 
+![GitHub issues](https://img.shields.io/github/issues/wissance/QmtechCycloneIVBoardDemos?style=plastic)
+![GitHub Release Date](https://img.shields.io/github/release-date/wissance/QmtechCycloneIVBoardDemos?style=plastic)
+![GitHub release (latest by date)](https://img.shields.io/github/downloads/wissance/QmtechCycloneIVBoardDemos/v0.1/total?style=plastic)
+
+## 1. Project description
+
+A set of ***additional*** non-official ***demo projects*** for `QmTech` `Cyclone IV` `Core Board` (`EP4CE15F23C8`).
+
+## 2. Demos
+
+### 2.1 RS232 Demo
+
+For testing `RS232` [`QuickRS232`](https://github.com/Wissance/QuickRS232) module
+was designed project `SerialPortEcho`. This project receive bytes from serial port (`COM`) that is configured in following mode - `115200 bit/s, 1 stop bit, even parity, no flow control`. This project do following: `receive byte, add + 1 and send it back`.
+
+![RS232 Timing diagrams](/docs/img/serial_echo_demo.png)
+
