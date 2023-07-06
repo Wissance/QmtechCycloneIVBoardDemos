@@ -56,3 +56,5 @@ dkms.conf
 SerialPortEcho/db/
 
 SerialPortEcho/output_files/
+
+*.rpt

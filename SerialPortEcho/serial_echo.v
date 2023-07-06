@@ -20,7 +20,7 @@
 module serial_echo(
     // Global Signals
     input wire clk,                                      // clk is a clock 
-    input wire rst,                                      // rst is a global reset system
+    // input wire rst,                                      // rst is a global reset system
     // External RS232 Interface
     input wire rx,                                       // rx  - receive  (1 bit line for receive data)
     output wire tx,                                      // tx  - transmit (1 bit line for transmit data)
@@ -29,6 +29,7 @@ module serial_echo(
 );
 
 localparam reg [3:0] DEFAULT_PROCESSES_DELAY_CYCLES = 10;
+localparam reg [3:0] RST_DELAY_CYCLES = 20;
 
 localparam reg [3:0] SERIAL_INPUT_AWAIT_STATE = 0;
 localparam reg [3:0] SERIAL_INPUT_DATA_RECEIVED_STATE = 1;
@@ -39,6 +40,9 @@ localparam reg [3:0] SERIAL_OUTPUT_DATA_SEND_STATE = 5;
 localparam reg [3:0] SERIAL_OUTPUT_DATA_CLR_STATE = 6;
 localparam reg [3:0] SERIAL_OUTPUT_DATA_FIN_STATE = 7;
 
+reg  rst = 1'b0;
+reg  rst_generated = 1'b0;
+reg  [7:0] rst_counter;
 reg  rx_read;
 wire rx_err;
 wire [7:0] rx_data;
@@ -60,6 +64,26 @@ serial_dev (.clk(clk), .rst(rst), .rx(rx), .tx(tx), .rts(rts), .cts(cts),
             .tx_data_copied(tx_data_copied), .tx_busy(tx_busy));
 
 //todo(UMV): add global board reset ....
+always @(posedge clk)
+begin
+    if (rst_generated != 1'b1)
+	 begin
+	     if (rst != 1'b1)
+		  begin
+		     rst <= 1'b1;
+			  rst_counter <= 0;
+		  end
+		  else
+		  begin
+		      rst_counter <= rst_counter + 1;
+				if (rst_counter == RST_DELAY_CYCLES)
+				begin
+				    rst <= 1'b0;
+					 rst_generated = 1'b1;
+				end
+		  end
+	 end
+end
             
 always @(posedge clk)
 begin
@@ -116,19 +140,24 @@ begin
             SERIAL_OUTPUT_DATA_READY_STATE:
             begin
                 tx_transaction <= 1'b1;
-                delay_counter <= delay_counter + 1;
+                //delay_counter <= delay_counter + 1;
                 tx_data <= data_buffer;
-                if (delay_counter == DEFAULT_PROCESSES_DELAY_CYCLES)
+                tx_data_ready <= 1'b1;
+                /*if (delay_counter == DEFAULT_PROCESSES_DELAY_CYCLES)
                 begin
                     delay_counter <= 0;
+                    serial_data_exchange_state <= SERIAL_OUTPUT_DATA_SEND_STATE;
+                end*/
+                if (tx_data_copied == 1'b1)
+                begin
                     serial_data_exchange_state <= SERIAL_OUTPUT_DATA_SEND_STATE;
                 end
             end
             SERIAL_OUTPUT_DATA_SEND_STATE:
             begin
-                if (tx_busy == 1'b0)
+                if (/*tx_busy*/ tx_data_copied == 1'b0)
                 begin
-                    tx_data_ready <= 1'b1;
+                    //tx_data_ready <= 1'b0;
                     serial_data_exchange_state <= SERIAL_OUTPUT_DATA_CLR_STATE;
                 end
             end
@@ -138,7 +167,7 @@ begin
                 if (delay_counter == DEFAULT_PROCESSES_DELAY_CYCLES)
                 begin
                     delay_counter <= 0;
-                    tx_data_ready <= 1'b1;
+                    tx_data_ready <= 1'b0;
                     serial_data_exchange_state <= SERIAL_OUTPUT_DATA_FIN_STATE;
                 end
             end

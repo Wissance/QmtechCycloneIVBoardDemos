@@ -32,7 +32,7 @@
 module serial_echo_tb();
 
 reg clk;
-reg rst;
+//reg rst;
 reg rx;
 wire tx;
 reg rts;
@@ -42,19 +42,19 @@ reg [31:0] counter;
 
 localparam reg[31:0] RS232_BIT_TICKS = 50000000 / 115200; // == 434
 
-serial_echo tty (.clk(clk), .rst(rst), .rx(rx), .tx(tx), .rts(rts), .cts(cts));
+serial_echo tty (.clk(clk), /*.rst(rst),*/ .rx(rx), .tx(tx), .rts(rts), .cts(cts));
 
 initial
 begin
     clk <= 0;
     counter <= 0;
-    rst <= 0;
     rx <= 1;
     rts <= 0;
-    #200
+	 //rst <= 0;
+    /*#200
     rst <= 1;
     #200
-    rst <= 0;
+    rst <= 0;*/
 end
 
 always
