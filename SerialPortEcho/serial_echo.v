@@ -19,13 +19,15 @@
 
 module serial_echo(
     // Global Signals
-    input wire clk,                                      // clk is a clock 
+    input  wire clk,                                     // clk is a clock 
     // input wire rst,                                      // rst is a global reset system
     // External RS232 Interface
-    input wire rx,                                       // rx  - receive  (1 bit line for receive data)
+    input  wire rx,                                      // rx  - receive  (1 bit line for receive data)
     output wire tx,                                      // tx  - transmit (1 bit line for transmit data)
-    input wire rts,                                      // rts - request to send PC sets rts == 1'b1 that indicates that there is a data for receive
-    output wire cts                                      // cts - 
+    input  wire rts,                                     // rts - request to send PC sets rts == 1'b1 that indicates that there is a data for receive
+    output wire cts,                                     // cts - clear to send
+	 output wire rx_led,                                  // rx_led - receive indicator
+	 output wire tx_led                                   // tx_led - transmission indicator
 );
 
 localparam reg [3:0] DEFAULT_PROCESSES_DELAY_CYCLES = 10;
@@ -39,6 +41,11 @@ localparam reg [3:0] SERIAL_OUTPUT_DATA_READY_STATE = 4;
 localparam reg [3:0] SERIAL_OUTPUT_DATA_SEND_STATE = 5;
 localparam reg [3:0] SERIAL_OUTPUT_DATA_CLR_STATE = 6;
 localparam reg [3:0] SERIAL_OUTPUT_DATA_FIN_STATE = 7;
+
+localparam reg [1:0]  BLINK_EVENT_AWAIT = 0;
+localparam reg [1:0]  BLINK_ZERO_STATE = 1;
+localparam reg [1:0]  BLINK_ONE_STATE = 2;
+localparam reg [31:0] LED_DELAY_COUNTER = 10000000; // 200 ms for 50 MHz
 
 reg  rst = 1'b0;
 reg  rst_generated = 1'b0;
@@ -55,6 +62,12 @@ wire tx_busy;
 reg  [7:0] data_buffer;
 reg [3:0] serial_data_exchange_state;
 reg [3:0] delay_counter;
+reg tx_blink;
+reg [1:0]  tx_blink_state;
+reg [31:0] tx_blink_counter;
+reg rx_blink;
+reg [1:0]  rx_blink_state;
+reg [31:0] rx_blink_counter;
 
 quick_rs232 #(.CLK_FREQ(50000000), .DEFAULT_BYTE_LEN(8), .DEFAULT_PARITY(1), .DEFAULT_STOP_BITS(0),
               .DEFAULT_BAUD_RATE(115200), .DEFAULT_RECV_BUFFER_LEN(16), .DEFAULT_FLOW_CONTROL(0)) 
@@ -63,7 +76,10 @@ serial_dev (.clk(clk), .rst(rst), .rx(rx), .tx(tx), .rts(rts), .cts(cts),
             .tx_transaction(tx_transaction), .tx_data(tx_data), .tx_data_ready(tx_data_ready), 
             .tx_data_copied(tx_data_copied), .tx_busy(tx_busy));
 
-//todo(UMV): add global board reset ....
+assign rx_led = rx_blink;
+assign tx_led = tx_blink;
+
+//this always implements the global reset that board generates at start
 always @(posedge clk)
 begin
     if (rst_generated != 1'b1)
@@ -84,7 +100,98 @@ begin
 		  end
 	 end
 end
-            
+
+// this always implements LED lighting on Rx (Receive) -  D4 diode
+always @(posedge clk)
+begin
+   if(rst)
+	begin
+	    rx_blink_state <= BLINK_EVENT_AWAIT;
+		 rx_blink_counter <= 0;
+		 rx_blink <= 0;
+	end
+	else
+	begin
+	    case (rx_blink_state)
+		 BLINK_EVENT_AWAIT:
+		 begin
+		     if (rx_byte_received)
+			  begin
+			      rx_blink_counter <= 0;
+			      rx_blink_state <= BLINK_ONE_STATE;
+					rx_blink <= 0;
+			  end
+		 end
+       BLINK_ONE_STATE:
+		 begin
+		     rx_blink_counter <= rx_blink_counter + 1;
+			  rx_blink <= 1;
+			  if (rx_blink_counter == LED_DELAY_COUNTER)
+			  begin
+			      rx_blink_counter <= 0;
+			      rx_blink_state <= BLINK_ZERO_STATE;
+			  end
+		 end
+		 BLINK_ZERO_STATE:
+		 begin
+		     rx_blink_counter <= rx_blink_counter + 1;
+			  rx_blink <= 0;
+			  if (rx_blink_counter == LED_DELAY_COUNTER)
+			  begin
+			      rx_blink_counter <= 0;
+			      rx_blink_state <= BLINK_EVENT_AWAIT;
+			  end
+		 end
+		 endcase
+	end
+end
+
+// this always implements LED lighting on Tx (Transmit) - D5 diode
+always @(posedge clk)
+begin
+   if(rst)
+	begin
+	    tx_blink_state <= BLINK_EVENT_AWAIT;
+		 tx_blink_counter <= 0;
+		 tx_blink <= 0;
+	end
+	else
+	begin
+	    case (tx_blink_state)
+		 BLINK_EVENT_AWAIT:
+		 begin
+		     if (tx_data_ready)
+			  begin
+			      tx_blink_counter <= 0;
+			      tx_blink_state <= BLINK_ONE_STATE;
+					tx_blink <= 0;
+			  end
+		 end
+       BLINK_ONE_STATE:
+		 begin
+		     tx_blink_counter <= tx_blink_counter + 1;
+			  tx_blink <= 1;
+			  if (tx_blink_counter == LED_DELAY_COUNTER)
+			  begin
+			      tx_blink_counter <= 0;
+			      tx_blink_state <= BLINK_ZERO_STATE;
+			  end
+		 end
+		 BLINK_ZERO_STATE:
+		 begin
+		     tx_blink_counter <= tx_blink_counter + 1;
+			  tx_blink <= 0;
+			  if (tx_blink_counter == LED_DELAY_COUNTER)
+			  begin
+			      tx_blink_counter <= 0;
+			      tx_blink_state <= BLINK_EVENT_AWAIT;
+			  end
+		 end
+		 endcase
+	end
+end
+
+// this always implements tcp echo mode            
 always @(posedge clk)
 begin
     if (rst)

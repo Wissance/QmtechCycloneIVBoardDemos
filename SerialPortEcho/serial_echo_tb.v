@@ -37,12 +37,15 @@ reg rx;
 wire tx;
 reg rts;
 wire cts;
+wire tx_led;
+wire rx_led;
 
 reg [31:0] counter;
 
 localparam reg[31:0] RS232_BIT_TICKS = 50000000 / 115200; // == 434
 
-serial_echo tty (.clk(clk), /*.rst(rst),*/ .rx(rx), .tx(tx), .rts(rts), .cts(cts));
+serial_echo tty (.clk(clk), /*.rst(rst),*/ .rx(rx), .tx(tx), .rts(rts), .cts(cts), 
+                 .tx_led(tx_led), .rx_led(rx_led));
 
 initial
 begin
