@@ -76,8 +76,8 @@ serial_dev (.clk(clk), .rst(rst), .rx(rx), .tx(tx), .rts(rts), .cts(cts),
             .tx_transaction(tx_transaction), .tx_data(tx_data), .tx_data_ready(tx_data_ready), 
             .tx_data_copied(tx_data_copied), .tx_busy(tx_busy));
 
-assign rx_led = rx_blink;
-assign tx_led = tx_blink;
+assign rx_led = ~rx_blink;
+assign tx_led = ~tx_blink;
 
 //this always implements the global reset that board generates at start
 always @(posedge clk)
@@ -101,7 +101,7 @@ begin
 	 end
 end
 
-// this always implements LED lighting on Rx (Receive) -  D4 diode
+// this always implements LED lighting on Rx (Receive) -  D5 diode
 always @(posedge clk)
 begin
    if(rst)
@@ -146,7 +146,7 @@ begin
 	end
 end
 
-// this always implements LED lighting on Tx (Transmit) - D5 diode
+// this always implements LED lighting on Tx (Transmit) - can't use D4
 always @(posedge clk)
 begin
    if(rst)
