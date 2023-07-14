@@ -20,11 +20,11 @@ was designed project `SerialPortEcho`. This project receive bytes from serial po
 #### 2.1.1 Demo project on board pinout
 
 * `CLK` - global clock - already on the board -> `DIFFCLK_1P`
-* `RX` - `RS232` `RX` line - connected to `U8` 20 pin -> `IO_AB19`
-* `TX` - `RS232` `TX` line - connected to `U8` 22 pin -> `IO_AB20`
-* `RTS` - we **don't USE it** in this demo **because simple `TTL` to `RS232` converter**, but anyway we connect it to `U8` 24 pin -> `IO_Y21`
+* `RX` - `RS232` `RX` line - connected to `U8` `20 pin` -> `IO_AB19`
+* `TX` - `RS232` `TX` line - connected to `U8` `22 pin` -> `IO_AB20`
+* `RTS` - we **don't USE it** in this demo **because simple `TTL` to `RS232` converter**, but anyway we connect it to `U8` `24 pin` -> `IO_Y21`
 * `CTS` - we don't USE it in this demo because simple `TTL` to `RS232` converter,
-  but anyway we connect it to `U8` 26 pin -> `IO_W21`
+  but anyway we connect it to `U8` `26 pin` -> `IO_W21`
 * `RX_LED` - connect it to `D5 LED` -> `DIFFIO_L3P`
 * `TX_LED` - don't have on board free `LED`, therefore just out it to pin 30 of `U8` (`IO_U21`)
 
