@@ -76,8 +76,8 @@ serial_dev (.clk(clk), .rst(rst), .rx(rx), .tx(tx), .rts(rts), .cts(cts),
             .tx_transaction(tx_transaction), .tx_data(tx_data), .tx_data_ready(tx_data_ready), 
             .tx_data_copied(tx_data_copied), .tx_busy(tx_busy));
 
-assign rx_led = ~rx_blink;
-assign tx_led = ~tx_blink;
+assign rx_led = (rst_generated == 1'b1) ? 1'b0 : rx_blink;
+assign tx_led = (rst_generated == 1'b1) ? 1'b0 : tx_blink;
 
 //this always implements the global reset that board generates at start
 always @(posedge clk)
