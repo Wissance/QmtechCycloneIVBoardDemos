@@ -27,7 +27,8 @@ module serial_echo(
     input  wire rts,                                     // rts - request to send PC sets rts == 1'b1 that indicates that there is a data for receive
     output wire cts,                                     // cts - clear to send
 	 output wire rx_led,                                  // rx_led - receive indicator
-	 output wire tx_led                                   // tx_led - transmission indicator
+	 output wire tx_led,                                  // tx_led - transmission indicator
+	 output wire [7:0] led_bus                            // for debug only
 );
 
 localparam reg [3:0] DEFAULT_PROCESSES_DELAY_CYCLES = 10;
@@ -60,24 +61,24 @@ reg  tx_data_ready;
 wire tx_data_copied;
 wire tx_busy;
 reg  [7:0] data_buffer;
-reg [3:0] serial_data_exchange_state;
-reg [3:0] delay_counter;
-reg tx_blink;
-reg [1:0]  tx_blink_state;
-reg [31:0] tx_blink_counter;
-reg rx_blink;
-reg [1:0]  rx_blink_state;
-reg [31:0] rx_blink_counter;
+reg  [3:0] serial_data_exchange_state;
+reg  [3:0] delay_counter;
+reg  tx_blink;
+reg  [1:0]  tx_blink_state;
+reg  [31:0] tx_blink_counter;
+reg  rx_blink;
+reg  [1:0]  rx_blink_state;
+reg  [31:0] rx_blink_counter;
 
-quick_rs232 #(.CLK_FREQ(50000000), .DEFAULT_BYTE_LEN(8), .DEFAULT_PARITY(1), .DEFAULT_STOP_BITS(0),
-              .DEFAULT_BAUD_RATE(115200), .DEFAULT_RECV_BUFFER_LEN(16), .DEFAULT_FLOW_CONTROL(0)) 
+quick_rs232 #(.CLK_TICKS_PER_RS232_BIT(434), .DEFAULT_BYTE_LEN(8), .DEFAULT_PARITY(1), .DEFAULT_STOP_BITS(0),
+              .DEFAULT_RECV_BUFFER_LEN(16), .DEFAULT_FLOW_CONTROL(0)) 
 serial_dev (.clk(clk), .rst(rst), .rx(rx), .tx(tx), .rts(rts), .cts(cts),
             .rx_read(rx_read), .rx_err(rx_err), .rx_data(rx_data), .rx_byte_received(rx_byte_received),
             .tx_transaction(tx_transaction), .tx_data(tx_data), .tx_data_ready(tx_data_ready), 
-            .tx_data_copied(tx_data_copied), .tx_busy(tx_busy));
+            .tx_data_copied(tx_data_copied), .tx_busy(tx_busy), .debug_led_bus(led_bus));
 
-assign rx_led = (rst_generated == 1'b1) ? 1'b0 : rx_blink;
-assign tx_led = (rst_generated == 1'b1) ? 1'b0 : tx_blink;
+assign rx_led = (rst_generated == 1'b1) ? rx_blink : 1'b1;
+assign tx_led = (rst_generated == 1'b1) ? tx_blink : 1'b1;
 
 //this always implements the global reset that board generates at start
 always @(posedge clk)
@@ -210,7 +211,7 @@ begin
             SERIAL_INPUT_AWAIT_STATE:
             begin
                 // this is not very reliable to await level, but this is only demo therefore it has rights to be here
-                if(rx_byte_received)
+                if(rx_byte_received) // use trigger here
                 begin
                     serial_data_exchange_state <= SERIAL_INPUT_DATA_RECEIVED_STATE;
                     delay_counter <= 0;
@@ -247,7 +248,7 @@ begin
             SERIAL_OUTPUT_DATA_READY_STATE:
             begin
                 tx_transaction <= 1'b1;
-                //delay_counter <= delay_counter + 1;
+                // delay_counter <= delay_counter + 1;
                 tx_data <= data_buffer;
                 tx_data_ready <= 1'b1;
                 /*if (delay_counter == DEFAULT_PROCESSES_DELAY_CYCLES)

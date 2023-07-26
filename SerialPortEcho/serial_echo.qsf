@@ -78,5 +78,25 @@ set_location_assignment PIN_AB20 -to tx
 set_location_assignment PIN_Y21 -to rts
 set_location_assignment PIN_W21 -to cts
 set_location_assignment PIN_E4 -to rx_led
-set_location_assignment PIN_U21 -to tx_led
+set_location_assignment PIN_V21 -to tx_led
+set_global_assignment -name ENABLE_SIGNALTAP OFF
+set_global_assignment -name USE_SIGNALTAP_FILE debug_st_cfg.stp
+set_global_assignment -name SIGNALTAP_FILE debug_st_cfg.stp
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to led_bus[7]
+set_location_assignment PIN_U21 -to led_bus[7]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to led_bus[6]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to led_bus[5]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to led_bus[4]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to led_bus[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to led_bus[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to led_bus[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to led_bus[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to led_bus
+set_location_assignment PIN_R21 -to led_bus[6]
+set_location_assignment PIN_P21 -to led_bus[5]
+set_location_assignment PIN_N21 -to led_bus[4]
+set_location_assignment PIN_M21 -to led_bus[3]
+set_location_assignment PIN_L21 -to led_bus[2]
+set_location_assignment PIN_K21 -to led_bus[1]
+set_location_assignment PIN_J21 -to led_bus[0]
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
