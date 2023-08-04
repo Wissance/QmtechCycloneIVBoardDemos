@@ -60,7 +60,7 @@ module quick_rs232 #(
     input wire tx_data_ready,                            // required: setting to 1 when new data is ready to send
     output reg tx_data_copied,                           // short pulse means that data was copied _--_____--______--___
     output reg tx_busy,                                  // tx notes that data is sending via RS232 or RS232 module awaiting flow-control synch
-	 output reg [7:0] debug_led_bus
+    output reg [7:0] debug_led_bus
 );
 
 localparam reg [3:0] IDLE_EXCHANGE_STATE = 1;
@@ -78,6 +78,7 @@ localparam reg [31:0] PARITY_ANALYZE_OFFSET = 16;
 
 reg [31:0] TICKS_PER_UART_BIT;                           // = CLK_FREQ / DEFAULT_BAUD_RATE;
 reg [31:0] HALF_TICKS_PER_UART_BIT;                      // = TICKS_PER_UART_BIT / 2;
+reg [31:0] TOTAL_RX_TIMEOUT;
 
 reg [3:0] tx_state;
 reg [3:0] rx_state;
@@ -90,6 +91,7 @@ reg [DEFAULT_BYTE_LEN-1:0] rx_buffer;
 wire rx_data_buffer_full;
 reg [31:0] rx_bit_counter;
 reg [31:0] rx_stop_bit_counter_limit;
+reg [31:0] rx_timeout;
 reg [3:0]  rx_data_bit_counter;
 reg rx_data_parity;
 integer i;
@@ -122,10 +124,21 @@ begin
         TICKS_PER_UART_BIT <= CLK_TICKS_PER_RS232_BIT;
         HALF_TICKS_PER_UART_BIT <= CLK_TICKS_PER_RS232_BIT / 2;
         j <= 0;
-		  debug_led_bus <= 1'b1;
+        TOTAL_RX_TIMEOUT <= 6400; // ~ 9600 bit/s
+        rx_timeout <= 0;
+        debug_led_bus <= 8'b11111111;
     end
     else
     begin
+        if (rx_state > SYNCH_START_EXCHANGE_STATE)
+        begin
+            rx_timeout <= rx_timeout + 1;
+        end
+        if (rx_timeout == TOTAL_RX_TIMEOUT)
+        begin
+            rx_state <= SYNCH_WAIT_EXCHANGE_STATE;
+        end
+
         case (rx_state)
             IDLE_EXCHANGE_STATE:
             begin
@@ -134,6 +147,7 @@ begin
             end
             SYNCH_WAIT_EXCHANGE_STATE:
             begin
+                rx_err <= 1'b0;
                 if (DEFAULT_FLOW_CONTROL == `NO_FLOW_CONTROL)
                 begin
                     rx_state <= SYNCH_START_EXCHANGE_STATE;
@@ -161,8 +175,15 @@ begin
                 // catch start from 1 to 0
                 if (rx == 1'b0)
                 begin
+                    rx_timeout <= 0;
                     rx_state <= START_BIT_EXCHANGE_STATE;
                     rx_bit_counter <= 0;
+                    //debug_led_bus[0] <= 1'b1;
+                    //debug_led_bus[4] <= 1'b1;
+                end
+                else
+                begin
+                    //debug_led_bus[0] <= 1'b0; 
                 end
             end
             START_BIT_EXCHANGE_STATE:
@@ -200,8 +221,8 @@ begin
             PARITY_BIT_EXCHANGE_STATE:
             begin
                 rx_bit_counter <= rx_bit_counter + 1;
-					 if (rx_bit_counter == TICKS_PER_UART_BIT - PARITY_ANALYZE_OFFSET)
-					 begin
+                if (rx_bit_counter == TICKS_PER_UART_BIT - PARITY_ANALYZE_OFFSET)
+                begin
                     // check parity, if parity is bad generate error, don't store byte
                     case (DEFAULT_PARITY)
                         `NO_PARITY:
@@ -235,7 +256,7 @@ begin
                             rx_state <= PARITY_BIT_ANALYZE_STATE;
                         end
                     endcase
-					 end
+                end
             end
             PARITY_BIT_ANALYZE_STATE:
             begin
@@ -255,32 +276,37 @@ begin
                 end
                 rx_state <= PARITY_REMANENCE_TIMEOUT_WAIT_STATE;
             end
-				PARITY_REMANENCE_TIMEOUT_WAIT_STATE:
-				begin
-				    rx_bit_counter <= rx_bit_counter + 1;
-					 if (rx_bit_counter == TICKS_PER_UART_BIT + 1)
-					 begin
-					     rx_state <= STOP_BITS_EXCHANGE_STATE;
-					 end
-					 if (rx_err == 1'b0)
+            PARITY_REMANENCE_TIMEOUT_WAIT_STATE:
+            begin
+                rx_bit_counter <= rx_bit_counter + 1;
+                if (rx_bit_counter == TICKS_PER_UART_BIT + 1)
+                begin
+                    rx_bit_counter <= 0;
+                    rx_state <= STOP_BITS_EXCHANGE_STATE;
+                end
+
+                if (rx_err == 1'b0)
                 begin
                     rx_byte_received <= 1'b1;
-						  // debug_rx <= 1'b1;
-						  debug_led_bus[7] <= 1'b1;
-						  debug_led_bus[6] <= 1'b0;
+                    //debug_led_bus[7] <= 1'b0;  // no err
+                    //debug_led_bus[6] <= 1'b0;  
                 end
-					 else
-					 begin
-					     // debug_rx <= 1'b0;
-						  debug_led_bus[7] <= 1'b0;
-						  debug_led_bus[6] <= 1'b1;
-					 end
-				end
+                else
+                begin
+                    //debug_led_bus[7] <= 1'b1;
+                    //debug_led_bus[6] <= 1'b1;
+                end
+            end
             STOP_BITS_EXCHANGE_STATE:
             begin
                 if (rx == 1'b1)
                 begin
                     rx_state <= SYNCH_STOP_EXCHANGE_STATE;
+                    //debug_led_bus[5] <= 1'b1;
+                end
+                else
+                begin
+                    //debug_led_bus[5] <= 1'b0;   // waiting 4 RX
                 end
             end
             SYNCH_STOP_EXCHANGE_STATE:
@@ -288,6 +314,7 @@ begin
                 rx_state <= SYNCH_WAIT_EXCHANGE_STATE;
                 rx_byte_received <= 1'b0;
                 rx_err <= 1'b0;
+                //debug_led_bus[4] <= 1'b0; 
             end
         endcase
     end
@@ -394,17 +421,20 @@ begin
             end
             DATA_BITS_EXCHANGE_STATE:
             begin
+                if (tx_data_bit_counter == DEFAULT_BYTE_LEN /*- 1*/)
+                begin
+                    tx_state <= PARITY_BIT_EXCHANGE_STATE;
+                    tx_data_copied <= 1'b0;
+                end
+                else
+                begin
                 tx <= tx_buffer[tx_data_bit_counter];
                 tx_bit_counter <= tx_bit_counter + 1;
                 if (tx_bit_counter == TICKS_PER_UART_BIT)
                 begin
                     tx_bit_counter <= 0;
                     tx_data_bit_counter <= tx_data_bit_counter + 1;
-                    if (tx_data_bit_counter == DEFAULT_BYTE_LEN - 1)
-                    begin
-                        tx_state <= PARITY_BIT_EXCHANGE_STATE;
-                        tx_data_copied <= 1'b0;
-                    end
+                end
                 end
             end
             PARITY_BIT_EXCHANGE_STATE:

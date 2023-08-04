@@ -34,7 +34,7 @@ module serial_echo(
 localparam reg [3:0] DEFAULT_PROCESSES_DELAY_CYCLES = 10;
 localparam reg [3:0] RST_DELAY_CYCLES = 20;
 
-localparam reg [3:0] SERIAL_INPUT_AWAIT_STATE = 0;
+localparam reg [3:0] SERIAL_INPUT_DATA_AWAIT_STATE = 0;
 localparam reg [3:0] SERIAL_INPUT_DATA_RECEIVED_STATE = 1;
 localparam reg [3:0] SERIAL_INPUT_DATA_PROCESSING_STATE = 2;
 localparam reg [3:0] SERIAL_INPUT_DATA_CLR_STATE = 3;
@@ -60,6 +60,7 @@ reg  [7:0] tx_data;
 reg  tx_data_ready;
 wire tx_data_copied;
 wire tx_busy;
+wire has_rx_data;
 reg  [7:0] data_buffer;
 reg  [3:0] serial_data_exchange_state;
 reg  [7:0] delay_counter;
@@ -81,6 +82,9 @@ serial_dev (.clk(clk), .rst(rst), .rx(rx), .tx(tx), .rts(rts), .cts(cts),
 
 assign rx_led = (rst_generated == 1'b1) ? rx_blink : 1'b1;
 assign tx_led = (rst_generated == 1'b1) ? tx_blink : 1'b1;
+assign has_rx_data = received_bytes_counter[0]|received_bytes_counter[1]|received_bytes_counter[2]|
+                     received_bytes_counter[3]|received_bytes_counter[4]|received_bytes_counter[5]|
+                     received_bytes_counter[6]|received_bytes_counter[7];
 
 //this always implements the global reset that board generates at start
 always @(posedge clk)
@@ -214,10 +218,12 @@ begin
             end
         end
         else
-        if (rx_byte_received == 1'b0)
         begin
-            rx_data_ready_trig <= 1'b1;
-            received_bytes_counter <= received_bytes_counter + 1;
+            if (rx_byte_received == 1'b0) 
+            begin
+                rx_data_ready_trig <= 1'b1;
+                received_bytes_counter <= received_bytes_counter + 1;
+            end
         end
     end
 end
@@ -231,18 +237,17 @@ begin
         rx_read <= 1'b0;
         tx_data <= 0;
         tx_data_ready <= 1'b0;
-        serial_data_exchange_state <= SERIAL_INPUT_AWAIT_STATE;
+        serial_data_exchange_state <= SERIAL_INPUT_DATA_AWAIT_STATE;
         delay_counter <= 0;
         data_buffer <= 0;
         led_bus <= 8'b11111111;
     end
     else
     begin
-        led_bus <= ~serial_data_exchange_state;
         case (serial_data_exchange_state)
-            SERIAL_INPUT_AWAIT_STATE:
+            SERIAL_INPUT_DATA_AWAIT_STATE:
             begin
-                if (received_bytes_counter > 0)
+                if (/*rx_data_ready_trig*/ has_rx_data == 1'b1)
                 begin
                     serial_data_exchange_state <= SERIAL_INPUT_DATA_RECEIVED_STATE;
                     delay_counter <= 0;
@@ -250,25 +255,25 @@ begin
             end
             SERIAL_INPUT_DATA_RECEIVED_STATE:
             begin
+                rx_read <= 1'b1;
                 delay_counter <= delay_counter + 1;
                 if (delay_counter == 16)
                 begin
                     delay_counter <= 0;
                     serial_data_exchange_state <= SERIAL_INPUT_DATA_PROCESSING_STATE;
-                    rx_read <= 1'b0;
                 end
             end
             SERIAL_INPUT_DATA_PROCESSING_STATE:
             begin
-                rx_read <= 1'b1;
-                delay_counter <= delay_counter + 1;
-                if (delay_counter == DEFAULT_PROCESSES_DELAY_CYCLES)
-                begin
-                    rx_read <= 1'b1;
+                rx_read <= 1'b0;
+                //delay_counter <= delay_counter + 1;
+                //if (delay_counter == DEFAULT_PROCESSES_DELAY_CYCLES)
+                //begin
+                led_bus <= ~rx_data;
                     data_buffer <= rx_data + 1;
                     delay_counter <= 0;
                     serial_data_exchange_state <= SERIAL_INPUT_DATA_CLR_STATE;
-                end
+                //end
             end
             SERIAL_INPUT_DATA_CLR_STATE:
             begin
@@ -318,7 +323,7 @@ begin
                 begin
                     delay_counter <= 0;
                     tx_transaction <= 1'b0;
-                    serial_data_exchange_state <= SERIAL_INPUT_AWAIT_STATE;
+                    serial_data_exchange_state <= SERIAL_INPUT_DATA_AWAIT_STATE;
                 end
             end
         endcase
