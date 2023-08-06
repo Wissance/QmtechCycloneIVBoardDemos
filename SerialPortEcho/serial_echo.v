@@ -247,7 +247,7 @@ begin
         case (serial_data_exchange_state)
             SERIAL_INPUT_DATA_AWAIT_STATE:
             begin
-                if (/*rx_data_ready_trig*/ has_rx_data == 1'b1)
+                if (has_rx_data == 1'b1)
                 begin
                     serial_data_exchange_state <= SERIAL_INPUT_DATA_RECEIVED_STATE;
                     delay_counter <= 0;
@@ -266,14 +266,10 @@ begin
             SERIAL_INPUT_DATA_PROCESSING_STATE:
             begin
                 rx_read <= 1'b0;
-                //delay_counter <= delay_counter + 1;
-                //if (delay_counter == DEFAULT_PROCESSES_DELAY_CYCLES)
-                //begin
                 led_bus <= ~rx_data;
-                    data_buffer <= rx_data + 1;
-                    delay_counter <= 0;
-                    serial_data_exchange_state <= SERIAL_INPUT_DATA_CLR_STATE;
-                //end
+                data_buffer <= rx_data + 1;
+                delay_counter <= 0;
+                serial_data_exchange_state <= SERIAL_INPUT_DATA_CLR_STATE;
             end
             SERIAL_INPUT_DATA_CLR_STATE:
             begin

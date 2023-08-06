@@ -118,6 +118,64 @@ begin
        rx <= 1'b1;
     end
     
+    // 2 sending next byte
+    // 2.1 Start bit
+    if (counter == 2 * 20 * RS232_BIT_TICKS + 100)  // we multiply on 2 because counter changes twice a period
+    begin
+       rx <= 1'b0;
+    end
+    // 2.2 Sending Data bits 8'b01010011
+    // b0
+    if (counter == 2 * 21 * RS232_BIT_TICKS + 100)  // we multiply on 2 because counter changes twice a period
+    begin
+       rx <= 1'b1;
+    end
+    // b1
+    if (counter == 2 * 22 * RS232_BIT_TICKS + 100)
+    begin
+       rx <= 1'b1;
+    end
+    // b2
+    if (counter == 2 * 23 * RS232_BIT_TICKS + 100)
+    begin
+       rx <= 1'b1;
+    end
+    // b3
+    if (counter == 2 * 24 * RS232_BIT_TICKS + 100)
+    begin
+       rx <= 1'b0;
+    end
+    // b4
+    if (counter == 2 * 25 * RS232_BIT_TICKS + 100)
+    begin
+       rx <= 1'b1;
+    end
+    // b5
+    if (counter == 2 * 26 * RS232_BIT_TICKS + 100)
+    begin
+       rx <= 1'b1;
+    end
+    // b6
+    if (counter == 2 * 27 * RS232_BIT_TICKS + 100)
+    begin
+       rx <= 1'b1;
+    end
+    // b7
+    if (counter == 2 * 28 * RS232_BIT_TICKS + 100)
+    begin
+       rx <= 1'b0;
+    end
+    // 2.3 Sending Parity (even)
+    if (counter == 2 * 29 * RS232_BIT_TICKS + 100)
+    begin
+       rx <= 1'b0;
+    end
+    // 2.4 Sending Stop bit
+    if (counter == 2 * 30 * RS232_BIT_TICKS + 100)
+    begin
+       rx <= 1'b1;
+    end
+    
 end
 
 endmodule

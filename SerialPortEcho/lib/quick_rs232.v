@@ -178,12 +178,6 @@ begin
                     rx_timeout <= 0;
                     rx_state <= START_BIT_EXCHANGE_STATE;
                     rx_bit_counter <= 0;
-                    //debug_led_bus[0] <= 1'b1;
-                    //debug_led_bus[4] <= 1'b1;
-                end
-                else
-                begin
-                    //debug_led_bus[0] <= 1'b0; 
                 end
             end
             START_BIT_EXCHANGE_STATE:
@@ -293,13 +287,6 @@ begin
                 if (rx_err == 1'b0)
                 begin
                     rx_byte_received <= 1'b1;
-                    //debug_led_bus[7] <= 1'b0;  // no err
-                    //debug_led_bus[6] <= 1'b0;  
-                end
-                else
-                begin
-                    //debug_led_bus[7] <= 1'b1;
-                    //debug_led_bus[6] <= 1'b1;
                 end
             end
             STOP_BITS_EXCHANGE_STATE:
@@ -307,7 +294,6 @@ begin
                 if (rx == 1'b1)
                 begin
                     rx_state <= SYNCH_STOP_EXCHANGE_STATE;
-                    //debug_led_bus[5] <= 1'b1;
                 end
                 else
                 begin
@@ -319,7 +305,6 @@ begin
                 rx_state <= SYNCH_WAIT_EXCHANGE_STATE;
                 rx_byte_received <= 1'b0;
                 rx_err <= 1'b0;
-                //debug_led_bus[4] <= 1'b0; 
             end
         endcase
     end
