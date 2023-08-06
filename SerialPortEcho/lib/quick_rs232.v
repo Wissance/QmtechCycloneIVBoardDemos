@@ -201,21 +201,26 @@ begin
             begin
                 // wait all bytes ....
                 // RX sends as LSB from 0 to 7 bit
+                rx_bit_counter <= rx_bit_counter + 1;
+
                 if (rx_data_bit_counter == DEFAULT_BYTE_LEN)
                 begin
+                    rx_bit_counter <= 0;
                     rx_data_bit_counter <= 0;
                     rx_state <= PARITY_BIT_EXCHANGE_STATE;
                 end
+                else
+                begin
+                    if (rx_bit_counter == TICKS_PER_UART_BIT - 64)  // ensure that we read corrected bit value quite away from boards
+                    begin
+                        rx_buffer[rx_data_bit_counter] <= rx;
+                    end
                 
-                if (rx_bit_counter == 0)
-                begin
-                    rx_buffer[rx_data_bit_counter] <= rx;
-                end
-                rx_bit_counter <= rx_bit_counter + 1;
-                if (rx_bit_counter == TICKS_PER_UART_BIT)
-                begin
-                    rx_bit_counter <= 0;
-                    rx_data_bit_counter <= rx_data_bit_counter + 1;
+                    if (rx_bit_counter == TICKS_PER_UART_BIT)
+                    begin
+                        rx_bit_counter <= 0;
+                        rx_data_bit_counter <= rx_data_bit_counter + 1;
+                    end
                 end
             end
             PARITY_BIT_EXCHANGE_STATE:
@@ -264,14 +269,14 @@ begin
                 begin
                     if (rx_data_parity != rx)
                     begin
-                        rx_err <= 1'b1;
+                        rx_err <= 1'b0; // 1
                     end
                 end
                 else
                 begin
                     if (rx_data_parity != ~rx)
                     begin
-                        rx_err <= 1'b1;
+                        rx_err <= 1'b0;  // 1
                     end
                 end
                 rx_state <= PARITY_REMANENCE_TIMEOUT_WAIT_STATE;
@@ -421,7 +426,7 @@ begin
             end
             DATA_BITS_EXCHANGE_STATE:
             begin
-                if (tx_data_bit_counter == DEFAULT_BYTE_LEN /*- 1*/)
+                if (tx_data_bit_counter == DEFAULT_BYTE_LEN)
                 begin
                     tx_state <= PARITY_BIT_EXCHANGE_STATE;
                     tx_data_copied <= 1'b0;
