@@ -74,7 +74,7 @@ reg  rx_data_ready_trig;
 reg  [7:0] received_bytes_counter;
 
 quick_rs232 #(.CLK_TICKS_PER_RS232_BIT(434), .DEFAULT_BYTE_LEN(8), .DEFAULT_PARITY(1), .DEFAULT_STOP_BITS(0),
-              .DEFAULT_RECV_BUFFER_LEN(16), .DEFAULT_FLOW_CONTROL(0)) 
+              .DEFAULT_RECV_BUFFER_LEN(1), .DEFAULT_FLOW_CONTROL(0)) 
 serial_dev (.clk(clk), .rst(rst), .rx(rx), .tx(tx), .rts(rts), .cts(cts),
             .rx_read(rx_read), .rx_err(rx_err), .rx_data(rx_data), .rx_byte_received(rx_byte_received),
             .tx_transaction(tx_transaction), .tx_data(tx_data), .tx_data_ready(tx_data_ready), 
@@ -102,7 +102,7 @@ begin
             if (rst_counter == RST_DELAY_CYCLES)
             begin
                 rst <= 1'b0;
-                rst_generated = 1'b1;
+                rst_generated <= 1'b1;
             end
         end
     end
@@ -199,7 +199,7 @@ begin
 end
 
 
-
+// todo(UMV): is this a source of my troubles ?????
 always @(posedge rst or negedge rx_byte_received or posedge rx_read)
 begin
     if (rst == 1'b1)
@@ -235,7 +235,7 @@ begin
     begin
         tx_transaction <= 1'b0;
         rx_read <= 1'b0;
-        tx_data <= 0;
+        tx_data <= 8'h33;
         tx_data_ready <= 1'b0;
         serial_data_exchange_state <= SERIAL_INPUT_DATA_AWAIT_STATE;
         delay_counter <= 0;
@@ -245,14 +245,16 @@ begin
     else
     begin
         case (serial_data_exchange_state)
+            // SERIAL_INPUT_DATA_AWAIT_STATE - if we have data 4 send
             SERIAL_INPUT_DATA_AWAIT_STATE:
             begin
+                delay_counter <= 0;
                 if (has_rx_data == 1'b1)
                 begin
                     serial_data_exchange_state <= SERIAL_INPUT_DATA_RECEIVED_STATE;
-                    delay_counter <= 0;
                 end
             end
+            // SERIAL_INPUT_DATA_RECEIVED_STATE - form rising edge on rx_read
             SERIAL_INPUT_DATA_RECEIVED_STATE:
             begin
                 rx_read <= 1'b1;
@@ -263,41 +265,36 @@ begin
                     serial_data_exchange_state <= SERIAL_INPUT_DATA_PROCESSING_STATE;
                 end
             end
+            // SERIAL_INPUT_DATA_PROCESSING_STATE - after delay of 16 counts
             SERIAL_INPUT_DATA_PROCESSING_STATE:
             begin
+                tx_data_ready <= 1'b0;
                 rx_read <= 1'b0;
-                led_bus <= ~rx_data;
-                data_buffer <= rx_data + 1;
-                delay_counter <= 0;
+                data_buffer <= rx_data;
                 serial_data_exchange_state <= SERIAL_INPUT_DATA_CLR_STATE;
             end
+            // SERIAL_INPUT_DATA_CLR_STATE - 
             SERIAL_INPUT_DATA_CLR_STATE:
             begin
+                tx_transaction <= 1'b1;
+                led_bus <= ~data_buffer;
                 delay_counter <= delay_counter + 1;
                 if (delay_counter == DEFAULT_PROCESSES_DELAY_CYCLES)
                 begin
                     delay_counter <= 0;
-                    rx_read <= 1'b0;
                     serial_data_exchange_state <= SERIAL_OUTPUT_DATA_READY_STATE;
                 end
             end
             SERIAL_OUTPUT_DATA_READY_STATE:
             begin
-                tx_transaction <= 1'b1;
-                tx_data <= data_buffer;
-                tx_data_ready <= 1'b1;
-                if (tx_data_copied == 1'b1)
-                begin
-                    serial_data_exchange_state <= SERIAL_OUTPUT_DATA_SEND_STATE;
-                end
+                tx_data <= data_buffer + 1;
+                serial_data_exchange_state <= SERIAL_OUTPUT_DATA_SEND_STATE;
             end
             SERIAL_OUTPUT_DATA_SEND_STATE:
             begin
-                //delay_counter <= delay_counter + 1;
-                //if (delay_counter == DEFAULT_PROCESSES_DELAY_CYCLES)
+                tx_data_ready <= 1'b1;
                 if (tx_data_copied == 1'b1)
                 begin
-                    // tx_data_ready <= 1'b0;
                     delay_counter <= 0;
                     serial_data_exchange_state <= SERIAL_OUTPUT_DATA_CLR_STATE;
                 end
@@ -314,10 +311,15 @@ begin
             end
             SERIAL_OUTPUT_DATA_FIN_STATE:
             begin
-                //delay_counter <= delay_counter + 1;
-                if (tx_busy == 1'b0/*delay_counter == DEFAULT_PROCESSES_DELAY_CYCLES*/)
+                data_buffer <= 0;
+                delay_counter <= 0;
+                tx_data <= 0;
+
+                if (tx_busy == 1'b0)
                 begin
+                    data_buffer <= 0;
                     delay_counter <= 0;
+                    tx_data <= 0;
                     tx_transaction <= 1'b0;
                     serial_data_exchange_state <= SERIAL_INPUT_DATA_AWAIT_STATE;
                 end
