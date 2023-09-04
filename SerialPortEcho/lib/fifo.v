@@ -62,7 +62,7 @@ module fifo #
         else
         begin
             //todo: umv: think about smart event separation for push and pop
-            if(push_clock)
+            if (push_clock)
             begin
                 if(data_count <= FIFO_SIZE)
                 begin
@@ -82,21 +82,24 @@ module fifo #
             end
             else
             begin
-                if (data_count >= 1)
+                if (pop_clock)
                 begin
-                    buffer = fifo_data[0];
-                    data_count = data_count - 1;
-                    pushed_last_value = 0;
-                    for(counter = 0; counter < FIFO_SIZE - 1; counter = counter + 1)
-                        fifo_data[counter] = fifo_data[counter + 1];
-                    fifo_data[FIFO_SIZE - 1] = 0;
-                    position = position - 1;
-                    popped_last_value = position == 0;
-                end
-                else
-                begin
-                    popped_last_value = 1;
-                    buffer = 0;
+                    if (data_count >= 1)
+                    begin
+                        buffer = fifo_data[0];
+                        data_count = data_count - 1;
+                        pushed_last_value = 0;
+                        for(counter = 0; counter < FIFO_SIZE - 1; counter = counter + 1)
+                            fifo_data[counter] = fifo_data[counter + 1];
+                        fifo_data[FIFO_SIZE - 1] = 0;
+                        position = position - 1;
+                        popped_last_value = position == 0;
+                    end
+                    else
+                    begin
+                        popped_last_value = 1;
+                        buffer = 0;
+                    end
                 end
             end
         end
