@@ -295,10 +295,6 @@ begin
                 begin
                     rx_state <= SYNCH_STOP_EXCHANGE_STATE;
                 end
-                else
-                begin
-                    //debug_led_bus[5] <= 1'b0;   // waiting 4 RX
-                end
             end
             SYNCH_STOP_EXCHANGE_STATE:
             begin
