@@ -32,7 +32,7 @@ module serial_echo(
 );
 
 localparam reg [3:0] DEFAULT_PROCESSES_DELAY_CYCLES = 10;
-localparam reg [3:0] RST_DELAY_CYCLES = 20;
+localparam reg [4:0] RST_DELAY_CYCLES = 20;
 
 localparam reg [3:0] SERIAL_INPUT_DATA_AWAIT_STATE = 0;
 localparam reg [3:0] SERIAL_INPUT_DATA_RECEIVED_STATE = 1;
@@ -74,11 +74,11 @@ reg  rx_data_ready_trig;
 reg  [7:0] received_bytes_counter;
 
 quick_rs232 #(.CLK_TICKS_PER_RS232_BIT(434), .DEFAULT_BYTE_LEN(8), .DEFAULT_PARITY(1), .DEFAULT_STOP_BITS(0),
-              .DEFAULT_RECV_BUFFER_LEN(1), .DEFAULT_FLOW_CONTROL(0)) 
+              .DEFAULT_RECV_BUFFER_LEN(8), .DEFAULT_FLOW_CONTROL(0)) 
 serial_dev (.clk(clk), .rst(rst), .rx(rx), .tx(tx), .rts(rts), .cts(cts),
             .rx_read(rx_read), .rx_err(rx_err), .rx_data(rx_data), .rx_byte_received(rx_byte_received),
             .tx_transaction(tx_transaction), .tx_data(tx_data), .tx_data_ready(tx_data_ready), 
-            .tx_data_copied(tx_data_copied), .tx_busy(tx_busy)/*, .debug_led_bus(led_bus)*/);
+            .tx_data_copied(tx_data_copied), .tx_busy(tx_busy));
 
 assign rx_led = (rst_generated == 1'b1) ? rx_blink : 1'b1;
 assign tx_led = (rst_generated == 1'b1) ? tx_blink : 1'b1;
