@@ -245,31 +245,33 @@ begin
     else
     begin
         case (serial_data_exchange_state)
-            // SERIAL_INPUT_DATA_AWAIT_STATE - if we have data 4 send
+            // SERIAL_INPUT_DATA_AWAIT_STATE - if quick_rs232 received some data in a FIFO buffer
             SERIAL_INPUT_DATA_AWAIT_STATE:
             begin
                 delay_counter <= 0;
-                if (has_rx_data == 1'b1)
+                if (has_rx_data == 1'b1 /*&& rx_byte_received == 1'b0*/)
                 begin
+                    rx_read <= 1'b1;
                     serial_data_exchange_state <= SERIAL_INPUT_DATA_RECEIVED_STATE;
                 end
             end
             // SERIAL_INPUT_DATA_RECEIVED_STATE - form rising edge on rx_read
             SERIAL_INPUT_DATA_RECEIVED_STATE:
             begin
-                rx_read <= 1'b1;
+                // rx_read <= 1'b1;
                 delay_counter <= delay_counter + 1;
                 if (delay_counter == 16)
                 begin
                     delay_counter <= 0;
                     serial_data_exchange_state <= SERIAL_INPUT_DATA_PROCESSING_STATE;
+                    rx_read <= 1'b0;
                 end
             end
             // SERIAL_INPUT_DATA_PROCESSING_STATE - after delay of 16 counts
             SERIAL_INPUT_DATA_PROCESSING_STATE:
             begin
                 tx_data_ready <= 1'b0;
-                rx_read <= 1'b0;
+                // rx_read <= 1'b0;
                 data_buffer <= rx_data;
                 serial_data_exchange_state <= SERIAL_INPUT_DATA_CLR_STATE;
             end
@@ -296,6 +298,7 @@ begin
                 if (tx_data_copied == 1'b1)
                 begin
                     delay_counter <= 0;
+                    tx_data_ready <= 1'b0;
                     serial_data_exchange_state <= SERIAL_OUTPUT_DATA_CLR_STATE;
                 end
             end

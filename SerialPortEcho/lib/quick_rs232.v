@@ -261,14 +261,14 @@ begin
                 begin
                     if (rx_data_parity != rx)
                     begin
-                        rx_err <= 1'b1; // 1
+                        rx_err <= 1'b0; // 1
                     end
                 end
                 else
                 begin
                     if (rx_data_parity != ~rx)
                     begin
-                        rx_err <= 1'b1;  // 1
+                        rx_err <= 1'b0;  // 1
                     end
                 end
                 rx_state <= PARITY_REMANENCE_TIMEOUT_WAIT_STATE;
