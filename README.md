@@ -2,7 +2,7 @@
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/wissance/QmtechCycloneIVBoardDemos?style=plastic) 
 ![GitHub issues](https://img.shields.io/github/issues/wissance/QmtechCycloneIVBoardDemos?style=plastic)
 ![GitHub Release Date](https://img.shields.io/github/release-date/wissance/QmtechCycloneIVBoardDemos?style=plastic)
-![GitHub release (latest by date)](https://img.shields.io/github/downloads/wissance/QmtechCycloneIVBoardDemos/v0.1/total?style=plastic)
+![GitHub release (latest by date)](https://img.shields.io/github/downloads/wissance/QmtechCycloneIVBoardDemos/v1.0/total?style=plastic)
 
 ## 1. Project description
 
