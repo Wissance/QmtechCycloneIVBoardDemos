@@ -39,8 +39,11 @@ Additionally RS232-to-TTL converter must be attached to power supply line and gr
 
 ### 2.2 Cmd Decode+Encode RS232 Demo
 
+is under development....
 
 ### 2.3 DRAM Explorer + RS232 Demo
+
+is under development....
 
 
 
