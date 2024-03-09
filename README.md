@@ -10,7 +10,7 @@ A set of ***additional*** non-official ***demo projects*** for `QmTech` `Cyclone
 
 ## 2. Demos
 
-### 2.1 RS232 Demo
+### 2.1 Echo+1 RS232 Demo
 
 For testing `RS232` [`QuickRS232`](https://github.com/Wissance/QuickRS232) module
 was designed project `SerialPortEcho`. This project receive bytes from serial port (`COM`) that is configured in following mode - `115200 bit/s, 1 stop bit, even parity, no flow control`. This project do following: `receive byte, add + 1 and send it back`.
@@ -36,6 +36,11 @@ Additionally RS232-to-TTL converter must be attached to power supply line and gr
 
 * `3V3` - Any pin from (3, 4)
 * `GND` - Any pin from (1, 2, 61, 62)
+
+### 2.2 Cmd Decode+Encode RS232 Demo
+
+
+### 2.3 DRAM Explorer + RS232 Demo
 
 
 
