@@ -17,6 +17,10 @@ was designed project `SerialPortEcho`. This project receive bytes from serial po
 
 ![RS232 Timing diagrams](/docs/img/serial_echo_demo.png)
 
+You could use our application [`Zerial`](https://github.com/Wissance/Zerial) to work with `RS232`:
+
+![Application 4 RS232](/docs/img/serial_echo_app_4test.png)
+
 #### 2.1.1 Demo project on board pinout
 
 * `CLK` - global clock - already on the board -> `DIFFCLK_1P` (`T2`)
@@ -32,4 +36,6 @@ Additionally RS232-to-TTL converter must be attached to power supply line and gr
 
 * `3V3` - Any pin from (3, 4)
 * `GND` - Any pin from (1, 2, 61, 62)
+
+
 
