@@ -64,3 +64,5 @@ SerialPortEcho/incremental_db/
 SerialPortWithCmdProcessor/db/
 
 SerialPortWithCmdProcessor/output_files/
+
+SerialPortWithCmdProcessor/incremental_db/
