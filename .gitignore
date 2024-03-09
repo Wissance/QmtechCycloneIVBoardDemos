@@ -58,3 +58,9 @@ SerialPortEcho/db/
 SerialPortEcho/output_files/
 
 *.rpt
+
+SerialPortEcho/incremental_db/
+
+SerialPortWithCmdProcessor/db/
+
+SerialPortWithCmdProcessor/output_files/
