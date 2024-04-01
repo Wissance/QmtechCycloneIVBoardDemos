@@ -39,6 +39,15 @@ localparam reg [1:0]  BLINK_ZERO_STATE = 1;
 localparam reg [1:0]  BLINK_ONE_STATE = 2;
 localparam reg [31:0] LED_DELAY_COUNTER = 10000000; // 200 ms for 50 MHz
 
+localparam reg [3:0] AWAIT_INPUT_DATA_STATE = 4'b0000;
+localparam reg [3:0] INPUT_DATA_RECEIVED_STATE = 4'b0001;
+localparam reg [3:0] CMD_CHECK_STATE = 4'b0010;
+localparam reg [3:0] CMD_DETECTED_STATE = 4'b0011;
+localparam reg [3:0] CMD_EXECUTE_STATE = 4'b0100;
+localparam reg [3:0] SEND_RESPONSE_STATE = 4'b0101;
+localparam reg [3:0] RESPONSE_SENT_STATE = 4'b0110;
+
+
 reg  rst = 1'b0;
 reg  rst_generated = 1'b0;
 reg  [7:0] rst_counter;
@@ -63,6 +72,7 @@ reg  [1:0]  rx_blink_state;
 reg  [31:0] rx_blink_counter;
 reg  rx_data_ready_trig;
 reg  [7:0] received_bytes_counter;
+reg  [3:0] device_state;
 
 quick_rs232 #(.CLK_TICKS_PER_RS232_BIT(434), .DEFAULT_BYTE_LEN(8), .DEFAULT_PARITY(1), .DEFAULT_STOP_BITS(0),
               .DEFAULT_RECV_BUFFER_LEN(8), .DEFAULT_FLOW_CONTROL(0)) 
@@ -167,6 +177,42 @@ begin
     end
 end
 
-// main cycle -> accumulate rx bytes -> process -> handle cmd -> send response 
+// main cycle -> accumulate rx bytes -> process -> handle cmd -> send response
+always @(posedge clk)
+begin
+    if (rst == 1'b1)
+    begin
+	     device_state <= AWAIT_INPUT_DATA_STATE;
+	 end
+	 else
+	 begin
+	     case (device_state)
+		  AWAIT_INPUT_DATA_STATE:
+		  begin
+		  end
+        INPUT_DATA_RECEIVED_STATE:
+		  begin
+		  end
+        CMD_CHECK_STATE:
+		  begin
+		  end
+        CMD_DETECTED_STATE:
+		  begin
+		  end
+        CMD_EXECUTE_STATE:
+		  begin
+		  end
+        SEND_RESPONSE_STATE:
+		  begin
+		  end
+        RESPONSE_SENT_STATE:
+		  begin
+		  end
+		  default:
+		  begin
+		  end
+		  endcase
+	 end
+end
 
 endmodule
