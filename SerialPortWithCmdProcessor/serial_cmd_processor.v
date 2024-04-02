@@ -46,6 +46,7 @@ localparam reg [3:0] CMD_DETECTED_STATE = 4'b0011;
 localparam reg [3:0] CMD_EXECUTE_STATE = 4'b0100;
 localparam reg [3:0] SEND_RESPONSE_STATE = 4'b0101;
 localparam reg [3:0] RESPONSE_SENT_STATE = 4'b0110;
+localparam reg [3:0] OPERATION_TIMEOUT_STATE = 4'b1111;
 
 
 reg  rst = 1'b0;
@@ -206,6 +207,9 @@ begin
 		  begin
 		  end
         RESPONSE_SENT_STATE:
+		  begin
+		  end
+		  OPERATION_TIMEOUT_STATE:
 		  begin
 		  end
 		  default:
