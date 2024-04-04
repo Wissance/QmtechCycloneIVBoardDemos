@@ -9,12 +9,20 @@
 // Target Devices:      QMTECH CycloneIV Core Board (EP4CE15F23C8N)
 // Tool versions:       Quartus Prime Lite 18.1
 // Description:         A hardware Serial Cmd Processor: RS232 Cmd to Read and Write Specific internal Register
-//
+//                      A CMD Format: |CMD Start (2 bytes of 0xFF)|Zero Byte (0x00)|Payload Len (1 byte)|Payload (up to 255 bytes, LSB)|CMD END (2 bytes of 0xFF)
+//                      Consider we have 2 COMMANDS (SET_REG = 0x01), (GET_REG = 0x02)
+//                      We assume that we deal with 4 REGISTERS (0, 1, 2, 3) each register is a 32 bit
+//                                                                    Start     Zero  PayLen                 Payload                  End
+//                      CMD to set Reg2 Value to 1A2B3C4D looks : | 0xFF 0xFF | 0x00 | 0x07 | 0x01 0x02 0xDD 0x4D 0x3C 0x2B 0x1A | 0xEE 0xEE |
+//                                                                    Start     Zero  PayLen   Payload       End
+//                      CMD to get Reg3 Value                     | 0xFF 0xFF | 0x00 | 0x02 | 0x02 0x03 | 0xEE 0xEE |
+//                      Device should respond on every CMD, on GET -> Value, On SET that Command Approved (0x01) OR Rejected (0x02)
+//                      CMD Approved:
+//                      CMD Rejected: 
 // Dependencies:        Depends on QuickRS232 sources (quick_rs232 && fifo modules), https://github.com/Wissance/QuickRS232
 //
 // Revision:            1.0
 // Additional Comments: Actualy we are testing here 1 mode: (115200 bod/s, 1 stop bit, even parity, no flow control)
-//
 //////////////////////////////////////////////////////////////////////////////////
 
 module serial_cmd_processor(
@@ -47,6 +55,9 @@ localparam reg [3:0] CMD_EXECUTE_STATE = 4'b0100;
 localparam reg [3:0] SEND_RESPONSE_STATE = 4'b0101;
 localparam reg [3:0] RESPONSE_SENT_STATE = 4'b0110;
 localparam reg [3:0] OPERATION_TIMEOUT_STATE = 4'b1111;
+
+
+localparam reg [3:0] CMD_LENGTH = 8;
 
 
 reg  rst = 1'b0;
