@@ -17,8 +17,8 @@
 //                                                                    Start     Zero  PayLen   Payload       End
 //                      CMD to get Reg3 Value                     | 0xFF 0xFF | 0x00 | 0x02 | 0x02 0x03 | 0xEE 0xEE |
 //                      Device should respond on every CMD, on GET -> Value, On SET that Command Approved (0x01) OR Rejected (0x02)
-//                      CMD Approved:
-//                      CMD Rejected: 
+//                      CMD Approved:                             | 0xFF 0xFF | 0x00 | 0x01 | 0x01 | 0xEE 0xEE |
+//                      CMD Rejected:                             | 0xFF 0xFF | 0x00 | 0x01 | 0x02 | 0xEE 0xEE |
 // Dependencies:        Depends on QuickRS232 sources (quick_rs232 && fifo modules), https://github.com/Wissance/QuickRS232
 //
 // Revision:            1.0
@@ -47,17 +47,20 @@ localparam reg [1:0]  BLINK_ZERO_STATE = 1;
 localparam reg [1:0]  BLINK_ONE_STATE = 2;
 localparam reg [31:0] LED_DELAY_COUNTER = 10000000; // 200 ms for 50 MHz
 
-localparam reg [3:0] AWAIT_INPUT_DATA_STATE = 4'b0000;
-localparam reg [3:0] INPUT_DATA_RECEIVED_STATE = 4'b0001;
-localparam reg [3:0] CMD_CHECK_STATE = 4'b0010;
-localparam reg [3:0] CMD_DETECTED_STATE = 4'b0011;
-localparam reg [3:0] CMD_EXECUTE_STATE = 4'b0100;
-localparam reg [3:0] SEND_RESPONSE_STATE = 4'b0101;
-localparam reg [3:0] RESPONSE_SENT_STATE = 4'b0110;
+localparam reg [3:0] INITIAL_STATE = 4'b0000;
+localparam reg [3:0] AWAIT_INPUT_DATA_STATE = 4'b0001;
+localparam reg [3:0] INPUT_DATA_RECEIVED_STATE = 4'b0010;
+localparam reg [3:0] CMD_CHECK_STATE = 4'b0011;
+localparam reg [3:0] CMD_DETECTED_STATE = 4'b0100;
+// ???????????????// probably should be removed ...
+localparam reg [3:0] CMD_EXECUTE_STATE = 4'b0101;
+localparam reg [3:0] SEND_RESPONSE_STATE = 4'b0110;
+localparam reg [3:0] RESPONSE_SENT_STATE = 4'b0111;
 localparam reg [3:0] OPERATION_TIMEOUT_STATE = 4'b1111;
 
 
-localparam reg [3:0] CMD_LENGTH = 8;
+localparam reg [3:0]  MIN_CMD_LENGTH = 7;
+localparam reg [15:0] MAX_TIMEOUT_BETWEEN_BYTES = 11000; // in cycles of 50MHz
 
 
 reg  rst = 1'b0;
@@ -85,6 +88,7 @@ reg  [31:0] rx_blink_counter;
 reg  rx_data_ready_trig;
 reg  [7:0] received_bytes_counter;
 reg  [3:0] device_state;
+reg  [15:0] cmd_receive_timeout;
 
 quick_rs232 #(.CLK_TICKS_PER_RS232_BIT(434), .DEFAULT_BYTE_LEN(8), .DEFAULT_PARITY(1), .DEFAULT_STOP_BITS(0),
               .DEFAULT_RECV_BUFFER_LEN(8), .DEFAULT_FLOW_CONTROL(0)) 
@@ -190,44 +194,62 @@ begin
 end
 
 // main cycle -> accumulate rx bytes -> process -> handle cmd -> send response
+// main issue here how to control that number of received bytes grew
 always @(posedge clk)
 begin
     if (rst == 1'b1)
     begin
-	     device_state <= AWAIT_INPUT_DATA_STATE;
-	 end
-	 else
-	 begin
-	     case (device_state)
-		  AWAIT_INPUT_DATA_STATE:
-		  begin
-		  end
+        device_state <= INITIAL_STATE;
+        cmd_receive_timeout <= 0;
+    end
+    else
+    begin
+        case (device_state)
+        INITIAL_STATE:
+        begin
+            // impl regs clear before new command
+            device_state <= AWAIT_INPUT_DATA_STATE;
+            cmd_receive_timeout <= 0;
+        end
+        AWAIT_INPUT_DATA_STATE:
+        begin
+            cmd_receive_timeout <= cmd_receive_timeout + 1;
+            // check receive, accumulate ...
+            if (cmd_receive_timeout == MAX_TIMEOUT_BETWEEN_BYTES)
+            begin
+                device_state <= INITIAL_STATE;
+            end
+        end
         INPUT_DATA_RECEIVED_STATE:
-		  begin
-		  end
+        begin
+            if (received_bytes_counter >= MIN_CMD_LENGTH)
+            begin
+                device_state <= CMD_CHECK_STATE;
+            end
+        end
         CMD_CHECK_STATE:
-		  begin
-		  end
+        begin
+        end
         CMD_DETECTED_STATE:
-		  begin
-		  end
+        begin
+        end
         CMD_EXECUTE_STATE:
-		  begin
-		  end
+        begin
+        end
         SEND_RESPONSE_STATE:
-		  begin
-		  end
+        begin
+        end
         RESPONSE_SENT_STATE:
-		  begin
-		  end
-		  OPERATION_TIMEOUT_STATE:
-		  begin
-		  end
-		  default:
-		  begin
-		  end
-		  endcase
-	 end
+        begin
+        end
+        OPERATION_TIMEOUT_STATE:
+        begin
+        end
+        default:
+        begin
+        end
+        endcase
+    end
 end
 
 endmodule
