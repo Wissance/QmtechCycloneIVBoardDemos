@@ -49,7 +49,7 @@ localparam reg [31:0] LED_DELAY_COUNTER = 10000000; // 200 ms for 50 MHz
 
 localparam reg [3:0] INITIAL_STATE = 4'b0000;
 localparam reg [3:0] AWAIT_INPUT_DATA_STATE = 4'b0001;
-localparam reg [3:0] INPUT_DATA_RECEIVED_STATE = 4'b0010;
+localparam reg [3:0] INPUT_BATCH_RECEIVED_DATA_STATE = 4'b0010;
 localparam reg [3:0] CMD_CHECK_STATE = 4'b0011;
 localparam reg [3:0] CMD_DETECTED_STATE = 4'b0100;
 // ???????????????// probably should be removed ...
@@ -59,7 +59,7 @@ localparam reg [3:0] RESPONSE_SENT_STATE = 4'b0111;
 localparam reg [3:0] OPERATION_TIMEOUT_STATE = 4'b1111;
 
 
-localparam reg [3:0]  MIN_CMD_LENGTH = 7;
+localparam reg [3:0]  MIN_CMD_LENGTH = 8;
 localparam reg [15:0] MAX_TIMEOUT_BETWEEN_BYTES = 11000; // in cycles of 50MHz
 
 
@@ -89,6 +89,7 @@ reg  rx_data_ready_trig;
 reg  [7:0] received_bytes_counter;
 reg  [3:0] device_state;
 reg  [15:0] cmd_receive_timeout;
+reg  [7:0] cmd_bytes_counter;
 
 quick_rs232 #(.CLK_TICKS_PER_RS232_BIT(434), .DEFAULT_BYTE_LEN(8), .DEFAULT_PARITY(1), .DEFAULT_STOP_BITS(0),
               .DEFAULT_RECV_BUFFER_LEN(8), .DEFAULT_FLOW_CONTROL(0)) 
@@ -208,8 +209,17 @@ begin
         INITIAL_STATE:
         begin
             // impl regs clear before new command
-            device_state <= AWAIT_INPUT_DATA_STATE;
-            cmd_receive_timeout <= 0;
+            if (cmd_receive_timeout > 0)
+            begin
+                // 1. Clear cmd_receive_timeout not received_bytes_counter
+                // ... todo (impl)
+            end
+            else
+            begin
+                device_state <= AWAIT_INPUT_DATA_STATE;
+                cmd_receive_timeout <= 0;
+                cmd_bytes_counter <= 0;
+            end
         end
         AWAIT_INPUT_DATA_STATE:
         begin
@@ -217,10 +227,26 @@ begin
             // check receive, accumulate ...
             if (cmd_receive_timeout == MAX_TIMEOUT_BETWEEN_BYTES)
             begin
-                device_state <= INITIAL_STATE;
+                if (received_bytes_counter == cmd_bytes_counter)
+                begin
+                    // 1. pause after BATCH, if we have enough bytes - analyze
+                    if (received_bytes_counter >= MIN_CMD_LENGTH)
+                    begin
+                        device_state <= INPUT_BATCH_RECEIVED_DATA_STATE;
+                    end
+                    else
+                    begin
+                        // 2. not enough data for CMD
+                        device_state <= INITIAL_STATE;
+                    end
+                end
+                else
+                begin
+                    cmd_receive_timeout <= 0;
+                end
             end
         end
-        INPUT_DATA_RECEIVED_STATE:
+        INPUT_BATCH_RECEIVED_DATA_STATE:
         begin
             if (received_bytes_counter >= MIN_CMD_LENGTH)
             begin
