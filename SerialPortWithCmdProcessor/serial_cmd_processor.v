@@ -202,6 +202,7 @@ begin
     begin
         device_state <= INITIAL_STATE;
         cmd_receive_timeout <= 0;
+        rx_read <= 1'b0;
     end
     else
     begin
@@ -209,10 +210,20 @@ begin
         INITIAL_STATE:
         begin
             // impl regs clear before new command
-            if (cmd_receive_timeout > 0)
+            if (cmd_bytes_counter > 0)
             begin
                 // 1. Clear cmd_receive_timeout not received_bytes_counter
-                // ... todo (impl)
+                cmd_receive_timeout <= cmd_receive_timeout + 1;
+                if (cmd_receive_timeout == 16)
+                begin
+                    rx_read <= 1'b1;
+                end
+                if (cmd_receive_timeout == 32)
+                begin
+                    rx_read <= 1'b0;
+                    cmd_bytes_counter <= cmd_bytes_counter - 1;
+                    cmd_receive_timeout <= 0;
+                end
             end
             else
             begin
@@ -238,6 +249,8 @@ begin
                     begin
                         // 2. not enough data for CMD
                         device_state <= INITIAL_STATE;
+                        rx_read <= 1'b0;
+                        cmd_receive_timeout <= 0;
                     end
                 end
                 else
