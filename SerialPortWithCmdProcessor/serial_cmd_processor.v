@@ -55,8 +55,8 @@ localparam reg [3:0] CMD_DETECTED_STATE = 4'b0100;
 // ???????????????// probably should be removed ...
 localparam reg [3:0] CMD_EXECUTE_STATE = 4'b0101;
 localparam reg [3:0] SEND_RESPONSE_STATE = 4'b0110;
-localparam reg [3:0] RESPONSE_SENT_STATE = 4'b0111;
-localparam reg [3:0] OPERATION_TIMEOUT_STATE = 4'b1111;
+//localparam reg [3:0] RESPONSE_SENT_STATE = 4'b0111;
+//localparam reg [3:0] OPERATION_TIMEOUT_STATE = 4'b1111;
 
 
 localparam reg [3:0]  MIN_CMD_LENGTH = 8;
@@ -261,31 +261,31 @@ begin
         end
         INPUT_BATCH_RECEIVED_DATA_STATE:
         begin
-            if (received_bytes_counter >= MIN_CMD_LENGTH)
-            begin
-                device_state <= CMD_CHECK_STATE;
-            end
+            // we should n't check, prepare for cmd check && detection
+            device_state <= CMD_CHECK_STATE;
         end
         CMD_CHECK_STATE:
         begin
+            // probably different module, await for check
+             device_state <= CMD_DETECTED_STATE;
         end
         CMD_DETECTED_STATE:
         begin
+            // prepare 4 execution
+            device_state <= CMD_EXECUTE_STATE;
         end
         CMD_EXECUTE_STATE:
         begin
+            // execute cmd
+            device_state <= SEND_RESPONSE_STATE;
         end
         SEND_RESPONSE_STATE:
         begin
-        end
-        RESPONSE_SENT_STATE:
-        begin
-        end
-        OPERATION_TIMEOUT_STATE:
-        begin
+            device_state <= INITIAL_STATE;
         end
         default:
         begin
+            device_state <= INITIAL_STATE;
         end
         endcase
     end
