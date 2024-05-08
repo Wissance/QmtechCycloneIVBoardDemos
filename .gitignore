@@ -66,3 +66,5 @@ SerialPortWithCmdProcessor/db/
 SerialPortWithCmdProcessor/output_files/
 
 SerialPortWithCmdProcessor/incremental_db/
+
+SerialPortWithCmdProcessor/simulation/
