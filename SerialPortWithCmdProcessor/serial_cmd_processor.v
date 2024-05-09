@@ -262,6 +262,10 @@ begin
         INPUT_BATCH_RECEIVED_DATA_STATE:
         begin
             // we should n't check, prepare for cmd check && detection
+            // there are multiple options: 
+            // 1. we'got a trash (not a command)
+            // 2. we'got a comand but with wrong data, or incomplete command
+            // 3. we'got a valid command
             device_state <= CMD_CHECK_STATE;
         end
         CMD_CHECK_STATE:
