@@ -26,7 +26,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 module serial_cmd_decoder #(
-    parameter MAX_CMD_PAYLOAD_BYTES = 6
+    parameter MAX_CMD_PAYLOAD_BYTES = 8
 )
 (
     input wire clk,
@@ -167,6 +167,29 @@ begin
             end
             CMD_PAYLOAD_LENGTH_PROCESSING_STATE:
             begin
+                byte_read_delay_counter <= byte_read_delay_counter + 1;
+                if (byte_read_delay_counter == BYTE_READ_CLK_DELAY)
+                begin
+                    cmd_read_clk <= ~cmd_read_clk;
+                end
+                if (byte_read_delay_counter == BYTE_READ_DATA_DELAY)
+                begin
+                    if (cmd_read_clk == 1'b1)
+                    begin
+                        payload_len <= data;
+                        if(data > MAX_CMD_PAYLOAD_BYTES)
+                        begin
+                            cmd_processed <= 1'b1;
+                            cmd_decode_success <= 1'b0;
+                            state <= INITIAL_STATE;
+                        end
+                    end
+                end
+                if (byte_read_delay_counter == BYTE_READ_END_DELAY)
+                begin
+                    cmd_read_clk <= 1'b0;
+                    state <=  CMD_PAYLOAD_PROCESSING_STATE;
+                end
             end
             CMD_PAYLOAD_PROCESSING_STATE:
             begin
