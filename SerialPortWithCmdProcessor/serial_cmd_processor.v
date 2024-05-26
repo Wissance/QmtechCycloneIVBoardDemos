@@ -48,8 +48,8 @@ localparam reg [1:0]  BLINK_ONE_STATE = 2;
 localparam reg [31:0] LED_DELAY_COUNTER = 10000000; // 200 ms for 50 MHz
 
 localparam reg [3:0] INITIAL_STATE = 4'b0000;
-localparam reg [3:0] AWAIT_INPUT_DATA_STATE = 4'b0001;
-localparam reg [3:0] INPUT_BATCH_RECEIVED_DATA_STATE = 4'b0010;
+localparam reg [3:0] AWAIT_CMD_STATE = 4'b0001;
+localparam reg [3:0] CMD_DECODE_STATE = 4'b0010;
 localparam reg [3:0] CMD_CHECK_STATE = 4'b0011;
 localparam reg [3:0] CMD_DETECTED_STATE = 4'b0100;
 // ???????????????// probably should be removed ...
@@ -90,6 +90,8 @@ reg  [7:0] received_bytes_counter;
 reg  [3:0] device_state;
 reg  [15:0] cmd_receive_timeout;
 reg  [7:0] cmd_bytes_counter;
+reg  [7:0] rx_read_counter;
+reg  [7:0] rx_cmd_bytes_analyzed;
 
 quick_rs232 #(.CLK_TICKS_PER_RS232_BIT(434), .DEFAULT_BYTE_LEN(8), .DEFAULT_PARITY(1), .DEFAULT_STOP_BITS(0),
               .DEFAULT_RECV_BUFFER_LEN(8), .DEFAULT_FLOW_CONTROL(0)) 
@@ -203,6 +205,8 @@ begin
         device_state <= INITIAL_STATE;
         cmd_receive_timeout <= 0;
         rx_read <= 1'b0;
+        rx_read_counter <= 0;
+        rx_cmd_bytes_analyzed <= 0;
     end
     else
     begin
@@ -227,12 +231,14 @@ begin
             end
             else
             begin
-                device_state <= AWAIT_INPUT_DATA_STATE;
+                device_state <= AWAIT_CMD_STATE;
                 cmd_receive_timeout <= 0;
                 cmd_bytes_counter <= 0;
+                rx_read_counter <= 0;
+                rx_cmd_bytes_analyzed <= 0;
             end
         end
-        AWAIT_INPUT_DATA_STATE:
+        AWAIT_CMD_STATE:
         begin
             cmd_receive_timeout <= cmd_receive_timeout + 1;
             // check receive, accumulate ...
@@ -243,7 +249,9 @@ begin
                     // 1. pause after BATCH, if we have enough bytes - analyze
                     if (received_bytes_counter >= MIN_CMD_LENGTH)
                     begin
-                        device_state <= INPUT_BATCH_RECEIVED_DATA_STATE;
+                        device_state <= CMD_DECODE_STATE;
+                        rx_read_counter <= 0;
+                        rx_cmd_bytes_analyzed <= 0;
                     end
                     else
                     begin
@@ -259,13 +267,26 @@ begin
                 end
             end
         end
-        INPUT_BATCH_RECEIVED_DATA_STATE:
+        CMD_DECODE_STATE:
         begin
             // we should n't check, prepare for cmd check && detection
             // there are multiple options: 
             // 1. we'got a trash (not a command)
             // 2. we'got a comand but with wrong data, or incomplete command
             // 3. we'got a valid command
+            // count <= count + 1 , if count == max, read ...
+            rx_read_counter <= rx_read_counter + 1;
+            if (rx_read_counter == 8)
+            begin
+                rx_read <= ~rx_read;
+                rx_read_counter <= 0;
+            end
+            if (rx_read_counter == 4 && rx_read == 1)
+            begin
+                // getting byte here ...
+                rx_cmd_bytes_analyzed <= rx_cmd_bytes_analyzed + 1;
+            end
+            
             device_state <= CMD_CHECK_STATE;
         end
         CMD_CHECK_STATE:
