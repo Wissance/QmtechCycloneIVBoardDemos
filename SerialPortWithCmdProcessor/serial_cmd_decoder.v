@@ -56,6 +56,7 @@ localparam reg [3:0] CMD_DETECTED_STATE = 4'b0100;
 
 localparam reg [7:0] BYTE_READ_CLK_DELAY = 16;
 localparam reg [7:0] BYTE_READ_DATA_DELAY = 25;
+localparam reg [7:0] BYTE_READ_END_DELAY = 32;
 localparam reg [7:0] SOF_BYTE = 255;
 localparam reg [7:0] EOF_BYTE = 238;
 localparam reg [7:0] SPACE_BYTE = 0;
@@ -133,7 +134,7 @@ begin
                     begin
                         if (sof_bytes_counter == NUMBER_OF_SOF_BYTES)
                         begin
-                            state <= CMD_SPACE_PROCESSING_STATE ;
+                            state <= CMD_SPACE_PROCESSING_STATE;
                         end
                     end
                     byte_read_delay_counter <= 0;
@@ -141,6 +142,44 @@ begin
             end
             CMD_SPACE_PROCESSING_STATE:
             begin
+                byte_read_delay_counter <= byte_read_delay_counter + 1;
+                if (byte_read_delay_counter == BYTE_READ_CLK_DELAY)
+                begin
+                    cmd_read_clk <= ~cmd_read_clk;
+                end
+                if (byte_read_delay_counter == BYTE_READ_DATA_DELAY)
+                begin
+                    if (cmd_read_clk == 1'b1)
+                    begin
+                        if(data != SPACE_BYTE)
+                        begin
+                            cmd_processed <= 1'b1;
+                            cmd_decode_success <= 1'b0;
+                            state <= INITIAL_STATE;
+                        end
+                    end
+                end
+                if (byte_read_delay_counter == BYTE_READ_END_DELAY)
+                begin
+                    cmd_read_clk <= 1'b0;
+                    state <= CMD_PAYLOAD_LENGTH_PROCESSING_STATE;
+                end
+            end
+            CMD_PAYLOAD_LENGTH_PROCESSING_STATE:
+            begin
+            end
+            CMD_PAYLOAD_PROCESSING_STATE:
+            begin
+            end
+            CMD_STOP_PROCESSING_STATE:
+            begin
+            end
+            CMD_DETECTED_STATE:
+            begin
+            end
+            default:
+            begin
+                state <= INITIAL;
             end
         endcase
     end
