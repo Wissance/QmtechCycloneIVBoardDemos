@@ -57,7 +57,6 @@ localparam reg [3:0] CMD_SPACE_PROCESSING_STATE = 4'b0011;
 localparam reg [3:0] CMD_PAYLOAD_LENGTH_PROCESSING_STATE = 4'b0100;
 localparam reg [3:0] CMD_PAYLOAD_PROCESSING_STATE = 4'b0101;
 localparam reg [3:0] CMD_STOP_PROCESSING_STATE = 4'b0110;
-localparam reg [3:0] CMD_DETECTED_STATE = 4'b0100;
 
 localparam reg [7:0] BYTE_READ_CLK_DELAY = 16;
 localparam reg [7:0] BYTE_READ_DATA_DELAY = 25;
@@ -73,6 +72,7 @@ reg [7:0] byte_read_delay_counter;
 reg [1:0] sof_bytes_counter;
 reg [1:0] eof_bytes_counter;
 reg [7:0] payload_len;
+reg [7:0] payload_counter;
 
 reg [7:0] mem [MAX_CMD_PAYLOAD_BYTES-1:0];
 
@@ -96,6 +96,7 @@ begin
         sof_bytes_counter <= 0;
         eof_bytes_counter <= 0;
         payload_len <= 0;
+        payload_counter <= 0;
     end
     else
     begin
@@ -111,6 +112,7 @@ begin
                 sof_bytes_counter <= 0;
                 eof_bytes_counter <= 0;
                 payload_len <= 0;
+                payload_counter <= 0;
             end
             AWAIT_CMD_STATE:
             begin
@@ -210,6 +212,7 @@ begin
                     cmd_read_clk <= 1'b0;
                     byte_read_delay_counter <= 0;
                     state <=  CMD_PAYLOAD_PROCESSING_STATE;
+                    payload_counter <= 0;
                 end
             end
             CMD_PAYLOAD_PROCESSING_STATE:
@@ -223,19 +226,57 @@ begin
                 begin
                     if (cmd_read_clk == 1'b1)
                     begin
+                        mem[payload_counter] <= data;
+                        payload_counter <= payload_counter + 1;
                     end
-                    if (byte_read_delay_counter == BYTE_READ_END_DELAY)
+                end
+                if (byte_read_delay_counter == BYTE_READ_END_DELAY)
+                begin
+                    if (payload_counter == payload_len || payload_counter == MAX_CMD_PAYLOAD_BYTES)
                     begin
-                        // store byte in mem, increase read payload counter, check counter
+                        state <= CMD_PAYLOAD_PROCESSING_STATE;
                     end
+                    cmd_read_clk <= 1'b0;
+                    byte_read_delay_counter <= 0;
                 end
             end
             CMD_STOP_PROCESSING_STATE:
             begin
+                // delay, toggle, inc counter,  analyze
+                byte_read_delay_counter <= byte_read_delay_counter + 1;
+                if (byte_read_delay_counter == BYTE_READ_CLK_DELAY)
+                begin
+                    cmd_read_clk <= ~cmd_read_clk;
+                end
+                if (byte_read_delay_counter == BYTE_READ_DATA_DELAY)
+                begin
+                    if (cmd_read_clk == 1'b1)
+                    begin
+                        // compare byte with SOF_BYTE, in not,  there is an error
+                        if (data == EOF_BYTE)
+                        begin
+                            eof_bytes_counter <= eof_bytes_counter + 1;
+                            cmd_bytes_processed <= cmd_bytes_processed + 1;
+                        end
+                        else
+                        begin
+                            // got error because byte is not START OF FRAME
+                            cmd_processed <= 1'b1;
+                            cmd_decode_success <= 1'b0;
+                            state <= INITIAL_STATE;
+                        end
+                    end
+                    else
+                    begin
+                        if (eof_bytes_counter == NUMBER_OF_EOF_BYTES)
+                        begin
+                            // state <= CMD_SPACE_PROCESSING_STATE;
+                        end
+                    end
+                    byte_read_delay_counter <= 0;
+                end
             end
-            CMD_DETECTED_STATE:
-            begin
-            end
+            
             default:
             begin
                 state <= INITIAL_STATE;
