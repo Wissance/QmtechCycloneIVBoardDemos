@@ -43,7 +43,11 @@ module serial_cmd_decoder #(
     output reg cmd_processed,
     output reg [7:0] cmd_bytes_processed,
     output reg cmd_decode_success,
-    output reg [7:0] cmd_payload [0:MAX_CMD_PAYLOAD_BYTES-1]
+    // unfortunately Verilog is not supported unpacked array as a port
+    output wire [7:0] cmd_payload_r0, output wire [7:0] cmd_payload_r1, 
+    output wire [7:0] cmd_payload_r2, output wire [7:0] cmd_payload_r3,
+    output wire [7:0] cmd_payload_r4, output wire [7:0] cmd_payload_r5, 
+    output wire [7:0] cmd_payload_r6, output wire [7:0] cmd_payload_r7
 );
 
 localparam reg [3:0] INITIAL_STATE = 4'b0000;
@@ -69,6 +73,17 @@ reg [7:0] byte_read_delay_counter;
 reg [1:0] sof_bytes_counter;
 reg [1:0] eof_bytes_counter;
 reg [7:0] payload_len;
+
+reg [7:0] mem [MAX_CMD_PAYLOAD_BYTES-1:0];
+
+assign cmd_payload_r0 = mem[0];
+assign cmd_payload_r1 = mem[1];
+assign cmd_payload_r2 = mem[2];
+assign cmd_payload_r3 = mem[3];
+assign cmd_payload_r4 = mem[4];
+assign cmd_payload_r5 = mem[5];
+assign cmd_payload_r6 = mem[6];
+assign cmd_payload_r7 = mem[7];
 
 always @(posedge clk)
 begin
