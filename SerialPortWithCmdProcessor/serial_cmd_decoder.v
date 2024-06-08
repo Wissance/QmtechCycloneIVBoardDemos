@@ -42,8 +42,9 @@ module serial_cmd_decoder #(
     // when set to 1 means cmd was decoded or not (at least it is noithing to do with data)
     output reg cmd_processed,
     output reg [7:0] cmd_bytes_processed,
-    output reg cmd_decode_success
-)
+    output reg cmd_decode_success,
+    output reg [7:0] cmd_payload [0:MAX_CMD_PAYLOAD_BYTES-1]
+);
 
 localparam reg [3:0] INITIAL_STATE = 4'b0000;
 localparam reg [3:0] AWAIT_CMD_STATE = 4'b0001;
@@ -76,7 +77,7 @@ begin
         state <= INITIAL_STATE;
         cmd_bytes_processed <= 0;
         cmd_processed <= 1'b0;
-        cmd_decoded <= 1'b0;
+        //cmd_decoded <= 1'b0;
         sof_bytes_counter <= 0;
         eof_bytes_counter <= 0;
         payload_len <= 0;
@@ -222,7 +223,7 @@ begin
             end
             default:
             begin
-                state <= INITIAL;
+                state <= INITIAL_STATE;
             end
         endcase
     end
