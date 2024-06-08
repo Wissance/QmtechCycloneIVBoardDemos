@@ -121,6 +121,7 @@ begin
                         if (data == SOF_BYTE)
                         begin
                             sof_bytes_counter <= sof_bytes_counter + 1;
+                            cmd_bytes_processed <= cmd_bytes_processed + 1;
                         end
                         else
                         begin
@@ -157,11 +158,13 @@ begin
                             cmd_decode_success <= 1'b0;
                             state <= INITIAL_STATE;
                         end
+                        cmd_bytes_processed <= cmd_bytes_processed + 1;
                     end
                 end
                 if (byte_read_delay_counter == BYTE_READ_END_DELAY)
                 begin
                     cmd_read_clk <= 1'b0;
+                    byte_read_delay_counter <= 0;
                     state <= CMD_PAYLOAD_LENGTH_PROCESSING_STATE;
                 end
             end
@@ -184,15 +187,32 @@ begin
                             state <= INITIAL_STATE;
                         end
                     end
+                    cmd_bytes_processed <= cmd_bytes_processed + 1;
                 end
                 if (byte_read_delay_counter == BYTE_READ_END_DELAY)
                 begin
                     cmd_read_clk <= 1'b0;
+                    byte_read_delay_counter <= 0;
                     state <=  CMD_PAYLOAD_PROCESSING_STATE;
                 end
             end
             CMD_PAYLOAD_PROCESSING_STATE:
             begin
+                byte_read_delay_counter <= byte_read_delay_counter + 1;
+                if (byte_read_delay_counter == BYTE_READ_CLK_DELAY)
+                begin
+                    cmd_read_clk <= ~cmd_read_clk;
+                end
+                if (byte_read_delay_counter == BYTE_READ_DATA_DELAY)
+                begin
+                    if (cmd_read_clk == 1'b1)
+                    begin
+                    end
+                    if (byte_read_delay_counter == BYTE_READ_END_DELAY)
+                    begin
+                        // store byte in mem, increase read payload counter, check counter
+                    end
+                end
             end
             CMD_STOP_PROCESSING_STATE:
             begin
