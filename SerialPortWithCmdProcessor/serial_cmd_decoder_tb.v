@@ -89,10 +89,13 @@ begin
     // 4.2 start decode
     // 4.3 check decode fails
     // 4.4 cleanup fifo
-    // 5.1 init invalid cmd by more data than decoder could process  ....
-end
-
-
-
+    // 5.1 init invalid cmd by more data than decoder could process (> .MAX_CMD_PAYLOAD_BYTES)
+    // 5.2 start decode
+    // 5.3 check decode fails
+    // 5.4 cleanup fifo
+    // 6.1 init invalid cmd by format eof missing
+    // 6.2 start decode
+    // 6.3 check decode fails
+    // 6.4 cleanup fifo
 
 endmodule
