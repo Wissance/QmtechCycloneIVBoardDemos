@@ -4,7 +4,7 @@
 // 
 // Create Date:         09.03.2024
 // Design Name:         SerialCmdProcessor
-// Module Name:         serial_cmd_processor
+// Module Name:         serial_cmd_decoder
 // Project Name:        SerialCmdProcessor
 // Target Devices:      QMTECH CycloneIV Core Board (EP4CE15F23C8N)
 // Tool versions:       Quartus Prime Lite 18.1
