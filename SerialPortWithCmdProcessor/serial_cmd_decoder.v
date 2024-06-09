@@ -57,6 +57,7 @@ localparam reg [3:0] CMD_SPACE_PROCESSING_STATE = 4'b0011;
 localparam reg [3:0] CMD_PAYLOAD_LENGTH_PROCESSING_STATE = 4'b0100;
 localparam reg [3:0] CMD_PAYLOAD_PROCESSING_STATE = 4'b0101;
 localparam reg [3:0] CMD_STOP_PROCESSING_STATE = 4'b0110;
+localparam reg [3:0] AWAIT_NOTIFICATION_STATE = 4'b0110;
 
 localparam reg [7:0] BYTE_READ_CLK_DELAY = 16;
 localparam reg [7:0] BYTE_READ_DATA_DELAY = 25;
@@ -126,7 +127,7 @@ begin
             end
             CMD_START_PROCESSING_STATE:
             begin
-                // 1. delay, toggle, inc counter,  analyze
+                // 1. delay, toggle, inc counter, analyze
                 byte_read_delay_counter <= byte_read_delay_counter + 1;
                 if (byte_read_delay_counter == BYTE_READ_CLK_DELAY)
                 begin
@@ -167,7 +168,7 @@ begin
             end
             CMD_SPACE_PROCESSING_STATE:
             begin
-                // 1. delay, toggle, inc counter,  analyze
+                // 1. delay, toggle, inc counter, analyze
                 byte_read_delay_counter <= byte_read_delay_counter + 1;
                 if (byte_read_delay_counter == BYTE_READ_CLK_DELAY)
                 begin
@@ -199,15 +200,19 @@ begin
             end
             CMD_PAYLOAD_LENGTH_PROCESSING_STATE:
             begin
+                // 1. delay, toggle, inc counter, analyze
                 byte_read_delay_counter <= byte_read_delay_counter + 1;
                 if (byte_read_delay_counter == BYTE_READ_CLK_DELAY)
                 begin
+                    // 2. assume that we trigger from 0 to 1
                     cmd_read_clk <= ~cmd_read_clk;
                 end
                 if (byte_read_delay_counter == BYTE_READ_DATA_DELAY)
                 begin
+                    // 3. after delay we attempt to read data
                     if (cmd_read_clk == 1'b1)
                     begin
+                        // 4. store payload, go next state
                         payload_len <= data;
                         if(data > MAX_CMD_PAYLOAD_BYTES)
                         begin
@@ -220,6 +225,7 @@ begin
                 end
                 if (byte_read_delay_counter == BYTE_READ_END_DELAY)
                 begin
+                    // 6. explicit clear clk && delay
                     cmd_read_clk <= 1'b0;
                     byte_read_delay_counter <= 0;
                     state <=  CMD_PAYLOAD_PROCESSING_STATE;
@@ -228,22 +234,27 @@ begin
             end
             CMD_PAYLOAD_PROCESSING_STATE:
             begin
+                // 1. delay, toggle, inc counter, analyze
                 byte_read_delay_counter <= byte_read_delay_counter + 1;
                 if (byte_read_delay_counter == BYTE_READ_CLK_DELAY)
                 begin
+                    // 2. toggle clk, on fist iteration we toggle from 0 to 1
                     cmd_read_clk <= ~cmd_read_clk;
                 end
+                // 3. after delay if cmd_read_clk is 1 we are reading payload byte
                 if (byte_read_delay_counter == BYTE_READ_DATA_DELAY)
                 begin
                     if (cmd_read_clk == 1'b1)
                     begin
+                        // 4. store payload byte in mem by index payload_counter 
                         mem[payload_counter] <= data;
-                        payload_counter <= payload_counter + 1;
                     end
                 end
                 if (byte_read_delay_counter == BYTE_READ_END_DELAY)
                 begin
-                    if (payload_counter == payload_len || payload_counter == MAX_CMD_PAYLOAD_BYTES)
+                    // 5. increase index, and check how many bytes we've read
+                    payload_counter <= payload_counter + 1;
+                    if (payload_counter == payload_len)
                     begin
                         state <= CMD_PAYLOAD_PROCESSING_STATE;
                     end
@@ -281,13 +292,16 @@ begin
                     begin
                         if (eof_bytes_counter == NUMBER_OF_EOF_BYTES)
                         begin
-                            // state <= CMD_SPACE_PROCESSING_STATE;
+                            state <= AWAIT_NOTIFICATION_STATE;
                         end
                     end
                     byte_read_delay_counter <= 0;
                 end
             end
-            
+            AWAIT_NOTIFICATION_STATE:
+            begin
+            // todo ....
+            end
             default:
             begin
                 state <= INITIAL_STATE;
