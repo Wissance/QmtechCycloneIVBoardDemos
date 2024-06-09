@@ -76,6 +76,7 @@ reg [7:0] payload_len;
 reg [7:0] payload_counter;
 
 reg [7:0] mem [MAX_CMD_PAYLOAD_BYTES-1:0];
+reg [3:0] i;
 
 assign cmd_payload_r0 = mem[0];
 assign cmd_payload_r1 = mem[1];
@@ -98,6 +99,8 @@ begin
         eof_bytes_counter <= 0;
         payload_len <= 0;
         payload_counter <= 0;
+        for (i = 0; i < MAX_CMD_PAYLOAD_BYTES; i = i + 1)
+            mem[i] <= 0;
     end
     else
     begin
