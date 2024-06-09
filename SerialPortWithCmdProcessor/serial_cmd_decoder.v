@@ -264,17 +264,19 @@ begin
             end
             CMD_STOP_PROCESSING_STATE:
             begin
-                // delay, toggle, inc counter,  analyze
+                // 1. delay, toggle, inc counter, analyze
                 byte_read_delay_counter <= byte_read_delay_counter + 1;
                 if (byte_read_delay_counter == BYTE_READ_CLK_DELAY)
                 begin
+                    // 2. toggle clk, on fist iteration we toggle from 0 to 1
                     cmd_read_clk <= ~cmd_read_clk;
                 end
                 if (byte_read_delay_counter == BYTE_READ_DATA_DELAY)
                 begin
+                    // 3. after delay if cmd_read_clk is 1 we are reading next byte
                     if (cmd_read_clk == 1'b1)
                     begin
-                        // compare byte with SOF_BYTE, in not,  there is an error
+                        // 4. compare byte with EOF_BYTE, in not, there is an error
                         if (data == EOF_BYTE)
                         begin
                             eof_bytes_counter <= eof_bytes_counter + 1;
@@ -292,6 +294,8 @@ begin
                     begin
                         if (eof_bytes_counter == NUMBER_OF_EOF_BYTES)
                         begin
+                            cmd_processed <= 1'b1;
+                            cmd_decode_success <= 1'b1;
                             state <= AWAIT_NOTIFICATION_STATE;
                         end
                     end
@@ -300,7 +304,12 @@ begin
             end
             AWAIT_NOTIFICATION_STATE:
             begin
-            // todo ....
+                if (cmd_processed_received == 1'b1)
+                begin
+                    cmd_processed <= 1'b0;
+                    cmd_decode_success <= 1'b0;
+                    state <= AWAIT_CMD_STATE;
+                end
             end
             default:
             begin
