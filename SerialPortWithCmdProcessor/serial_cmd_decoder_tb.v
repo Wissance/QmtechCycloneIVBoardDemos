@@ -97,5 +97,6 @@ begin
     // 6.2 start decode
     // 6.3 check decode fails
     // 6.4 cleanup fifo
+end
 
 endmodule
