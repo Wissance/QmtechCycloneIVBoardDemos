@@ -57,7 +57,7 @@ localparam reg [3:0] CMD_SPACE_PROCESSING_STATE = 4'b0011;
 localparam reg [3:0] CMD_PAYLOAD_LENGTH_PROCESSING_STATE = 4'b0100;
 localparam reg [3:0] CMD_PAYLOAD_PROCESSING_STATE = 4'b0101;
 localparam reg [3:0] CMD_STOP_PROCESSING_STATE = 4'b0110;
-localparam reg [3:0] AWAIT_NOTIFICATION_STATE = 4'b0110;
+localparam reg [3:0] AWAIT_NOTIFICATION_STATE = 4'b0111;
 
 localparam reg [7:0] BYTE_READ_CLK_DELAY = 16;
 localparam reg [7:0] BYTE_READ_DATA_DELAY = 25;
