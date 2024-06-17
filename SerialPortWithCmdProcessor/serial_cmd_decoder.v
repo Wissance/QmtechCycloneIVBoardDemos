@@ -259,7 +259,7 @@ begin
                     // 5. increase index, and check how many bytes we've read
                     if (payload_counter == payload_len)
                     begin
-                        state <= CMD_PAYLOAD_PROCESSING_STATE;
+                        state <= CMD_STOP_PROCESSING_STATE;
                     end
                     cmd_read_clk <= 1'b0;
                     byte_read_delay_counter <= 0;
