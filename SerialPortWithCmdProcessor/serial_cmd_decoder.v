@@ -128,6 +128,8 @@ begin
                         cmd_processed <= 1'b0;
                         cmd_decode_success <= 1'b0;
                         cmd_read_clk <= 1'b0;
+                        for (i = 0; i < MAX_CMD_PAYLOAD_BYTES; i = i + 1)
+                            mem[i] <= 0;
                     end
                 end
             end
