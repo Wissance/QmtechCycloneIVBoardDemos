@@ -120,12 +120,15 @@ begin
             end
             AWAIT_CMD_STATE:
             begin
-                if (cmd_ready == 1'b1)
+                if (cmd_processed_received == 1'b0)
                 begin
-                    state <= CMD_START_PROCESSING_STATE;
-                    cmd_processed <= 1'b0;
-                    cmd_decode_success <= 1'b0;
-                    cmd_read_clk <= 1'b0;
+                    if (cmd_ready == 1'b1)
+                    begin
+                        state <= CMD_START_PROCESSING_STATE;
+                        cmd_processed <= 1'b0;
+                        cmd_decode_success <= 1'b0;
+                        cmd_read_clk <= 1'b0;
+                    end
                 end
             end
             CMD_START_PROCESSING_STATE:

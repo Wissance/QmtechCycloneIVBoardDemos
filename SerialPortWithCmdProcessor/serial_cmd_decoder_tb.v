@@ -66,6 +66,7 @@ begin
     push <= 1'b0;
     in_data <= 0;
     cmd_ready <= 1'b0;
+    cmd_processed_received <= 1'b0;
     #100
     rst <= 1'b1;
     #100
@@ -258,6 +259,27 @@ begin
     end
 
     // 1.3 check regs r0-r7 + decode success
+    if (counter == 1900)
+    begin
+        `ASSERT(1'b1, cmd_processed)
+        `ASSERT(1'b1, cmd_decode_success)
+
+        `ASSERT(8'h11, r0)
+        `ASSERT(8'h22, r1)
+        `ASSERT(8'h33, r2)
+        `ASSERT(8'h44, r3)
+        `ASSERT(8'h55, r4)
+        `ASSERT(8'h66, r5)
+    end
+    // 1.4 clear cmd_processed by sending cmd_processed_received
+    if (counter == 2000)
+    begin
+        cmd_processed_received <= 1'b1;
+    end
+    if (counter == 2100)
+    begin
+        cmd_processed_received <= 1'b0;
+    end
     // 2.1 init another valid cmd
     // 2.2 start decode
     // 2.3 check regs r0-r7 + decode success
