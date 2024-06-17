@@ -80,7 +80,7 @@ begin
     // SOF=0xFF
     if (counter == 2 * 16)
     begin
-        in_data <= 255;
+        in_data <= 8'hff;
     end
     if (counter == 2 * 20)
     begin
@@ -94,7 +94,7 @@ begin
     // SOF=0xFF
     if (counter == 2 * 28)
     begin
-        in_data <= 255;
+        in_data <= 8'hff;
     end
     if (counter == 2 * 32)
     begin
@@ -136,7 +136,7 @@ begin
     // PAYLOAD_BYTE 0
     if (counter == 2 * 64)
     begin
-        in_data <= 1;
+        in_data <= 8'h11;
     end
     if (counter == 2 * 68)
     begin
@@ -150,7 +150,7 @@ begin
     // PAYLOAD_BYTE 1
     if (counter == 2 * 76)
     begin
-        in_data <= 3;
+        in_data <= 8'h22;
     end
     if (counter == 2 * 80)
     begin
@@ -164,7 +164,7 @@ begin
     // PAYLOAD_BYTE 2
     if (counter == 2 * 88)
     begin
-        in_data <= 11;
+        in_data <= 8'h33;
     end
     if (counter == 2 * 92)
     begin
@@ -178,7 +178,7 @@ begin
     // PAYLOAD_BYTE 3
     if (counter == 2 * 100)
     begin
-        in_data <= 22;
+        in_data <= 8'h44;
     end
     if (counter == 2 * 104)
     begin
@@ -192,7 +192,7 @@ begin
     // PAYLOAD_BYTE 4
     if (counter == 2 * 112)
     begin
-        in_data <= 33;
+        in_data <= 8'h55;
     end
     if (counter == 2 * 116)
     begin
@@ -206,7 +206,7 @@ begin
     // PAYLOAD_BYTE 5
     if (counter == 2 * 124)
     begin
-        in_data <= 33;
+        in_data <= 8'h66;
     end
     if (counter == 2 * 128)
     begin
@@ -220,7 +220,7 @@ begin
     // EOF=0xEE
     if (counter == 2 * 136)
     begin
-        in_data <= 238;
+        in_data <= 8'hee;
     end
     if (counter == 2 * 140)
     begin
@@ -234,7 +234,7 @@ begin
     // EOF=0xEE
     if (counter == 2 * 148)
     begin
-        in_data <= 238;
+        in_data <= 8'hee;
     end
     if (counter == 2 * 152)
     begin

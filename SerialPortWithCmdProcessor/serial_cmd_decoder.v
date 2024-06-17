@@ -251,12 +251,12 @@ begin
                     begin
                         // 4. store payload byte in mem by index payload_counter 
                         mem[payload_counter] <= data;
+                        payload_counter <= payload_counter + 1;
                     end
                 end
                 if (byte_read_delay_counter == BYTE_READ_END_DELAY)
                 begin
                     // 5. increase index, and check how many bytes we've read
-                    payload_counter <= payload_counter + 1;
                     if (payload_counter == payload_len)
                     begin
                         state <= CMD_PAYLOAD_PROCESSING_STATE;
