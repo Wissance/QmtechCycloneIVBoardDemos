@@ -65,9 +65,10 @@ begin
     counter <= 0;
     push <= 1'b0;
     in_data <= 0;
-    #200
+    cmd_ready <= 1'b0;
+    #100
     rst <= 1'b1;
-    #200
+    #100
     rst <= 1'b0;
 end
 
@@ -76,7 +77,186 @@ begin
     #10 clk <= ~clk; // 50 MHz
     counter <= counter + 1;
     // 1.1 init valid cmd
+    // SOF=0xFF
+    if (counter == 2 * 16)
+    begin
+        in_data <= 255;
+    end
+    if (counter == 2 * 20)
+    begin
+        push <= 1'b1;
+    end
+    if (counter == 2 * 24)
+    begin
+        push <= 1'b0;
+    end
+
+    // SOF=0xFF
+    if (counter == 2 * 28)
+    begin
+        in_data <= 255;
+    end
+    if (counter == 2 * 32)
+    begin
+        push <= 1'b1;
+    end
+    if (counter == 2 * 36)
+    begin
+        push <= 1'b0;
+    end
+
+    // SPACE=0x00
+    if (counter == 2 * 40)
+    begin
+        in_data <= 0;
+    end
+    if (counter == 2 * 44)
+    begin
+        push <= 1'b1;
+    end
+    if (counter == 2 * 48)
+    begin
+        push <= 1'b0;
+    end
+
+    // PAYLOAD_LEN=0x06
+    if (counter == 2 * 52)
+    begin
+        in_data <= 6;
+    end
+    if (counter == 2 * 56)
+    begin
+        push <= 1'b1;
+    end
+    if (counter == 2 * 60)
+    begin
+        push <= 1'b0;
+    end
+
+    // PAYLOAD_BYTE 0
+    if (counter == 2 * 64)
+    begin
+        in_data <= 1;
+    end
+    if (counter == 2 * 68)
+    begin
+        push <= 1'b1;
+    end
+    if (counter == 2 * 72)
+    begin
+        push <= 1'b0;
+    end
+
+    // PAYLOAD_BYTE 1
+    if (counter == 2 * 76)
+    begin
+        in_data <= 3;
+    end
+    if (counter == 2 * 80)
+    begin
+        push <= 1'b1;
+    end
+    if (counter == 2 * 84)
+    begin
+        push <= 1'b0;
+    end
+
+    // PAYLOAD_BYTE 2
+    if (counter == 2 * 88)
+    begin
+        in_data <= 11;
+    end
+    if (counter == 2 * 92)
+    begin
+        push <= 1'b1;
+    end
+    if (counter == 2 * 96)
+    begin
+        push <= 1'b0;
+    end
+
+    // PAYLOAD_BYTE 3
+    if (counter == 2 * 100)
+    begin
+        in_data <= 22;
+    end
+    if (counter == 2 * 104)
+    begin
+        push <= 1'b1;
+    end
+    if (counter == 2 * 108)
+    begin
+        push <= 1'b0;
+    end
+
+    // PAYLOAD_BYTE 4
+    if (counter == 2 * 112)
+    begin
+        in_data <= 33;
+    end
+    if (counter == 2 * 116)
+    begin
+        push <= 1'b1;
+    end
+    if (counter == 2 * 120)
+    begin
+        push <= 1'b0;
+    end
+
+    // PAYLOAD_BYTE 5
+    if (counter == 2 * 124)
+    begin
+        in_data <= 33;
+    end
+    if (counter == 2 * 128)
+    begin
+        push <= 1'b1;
+    end
+    if (counter == 2 * 132)
+    begin
+        push <= 1'b0;
+    end
+
+    // EOF=0xEE
+    if (counter == 2 * 136)
+    begin
+        in_data <= 238;
+    end
+    if (counter == 2 * 140)
+    begin
+        push <= 1'b1;
+    end
+    if (counter == 2 * 144)
+    begin
+        push <= 1'b0;
+    end
+
+    // EOF=0xEE
+    if (counter == 2 * 148)
+    begin
+        in_data <= 238;
+    end
+    if (counter == 2 * 152)
+    begin
+        push <= 1'b1;
+    end
+    if (counter == 2 * 156)
+    begin
+        push <= 1'b0;
+    end
+
     // 1.2 start decode
+    // 1.2.1 notify that we've received command
+    if (counter == 2 * 160)
+    begin
+        cmd_ready <= 1'b1;
+    end
+    // 1.2.2 notify that we've received command
+    if (counter == 2 * 170)
+    begin
+        cmd_ready <= 1'b0;
+    end
+
     // 1.3 check regs r0-r7 + decode success
     // 2.1 init another valid cmd
     // 2.2 start decode
