@@ -93,8 +93,10 @@ reg  [7:0] cmd_bytes_counter;
 reg  [7:0] rx_read_counter;
 reg  [7:0] rx_cmd_bytes_analyzed;
 wire [7:0] r0, r1, r2, r3, r4, r5, r6, r7;
+reg  [3:0] cmd_finalize_counter;
 reg cmd_ready;
 reg cmd_response_required;
+reg cmd_processed_received;
 wire cmd_decode_finished;
 wire cmd_decode_success;
 
@@ -107,8 +109,9 @@ serial_dev (.clk(clk), .rst(rst), .rx(rx), .tx(tx), .rts(rts), .cts(cts),
 
 serial_cmd_decoder #(.MAX_CMD_PAYLOAD_BYTES(8)) 
 decoder (.clk(clk), .rst(rst), .cmd_ready(cmd_ready), .data(rx_data),
-         .cmd_processed_received(), .cmd_read_clk(rx_read), .cmd_processed(),
-         .cmd_bytes_processed(), .cmd_decode_success(),
+         .cmd_processed_received(cmd_processed_received), 
+         .cmd_read_clk(rx_read), .cmd_processed(cmd_decode_finished),
+         .cmd_decode_success(cmd_decode_success),
          .cmd_payload_r0(r0), .cmd_payload_r1(r1),  .cmd_payload_r2(r2),
          .cmd_payload_r3(r3), .cmd_payload_r4(r4),  .cmd_payload_r5(r5),
          .cmd_payload_r6(r6), .cmd_payload_r7(r7));
@@ -221,6 +224,8 @@ begin
         rx_read_counter <= 0;
         rx_cmd_bytes_analyzed <= 0;
         cmd_response_required <= 1'b0;
+        cmd_processed_received <= 1'b0;
+        cmd_finalize_counter <= 0;
     end
     else
     begin
@@ -252,6 +257,7 @@ begin
                 rx_cmd_bytes_analyzed <= 0;
                 cmd_ready <= 1'b0;
                 cmd_response_required <= 1'b0;
+                cmd_processed_received <= 1'b0;
             end
         end
         AWAIT_CMD_STATE:
@@ -283,31 +289,18 @@ begin
                     cmd_receive_timeout <= 0;
                 end
             end
+            cmd_ready <= 1'b0;
+            cmd_response_required <= 1'b0;
+            cmd_processed_received <= 1'b0;
+            cmd_finalize_counter <= 0;
         end
         CMD_DECODE_STATE:
         begin
             if (cmd_decode_finished == 1'b1)
             begin
                 device_state <= CMD_CHECK_STATE;
+                cmd_ready <= 1'b0;
             end
-            // we should n't check, prepare for cmd check && detection
-            // there are multiple options: 
-            // 1. we'got a trash (not a command)
-            // 2. we'got a command but with wrong data, or incomplete command
-            // 3. we'got a valid command
-            // count <= count + 1 , if count == max, read ...
-            /* rx_read_counter <= rx_read_counter + 1;
-            if (rx_read_counter == 8)
-            begin
-                rx_read <= ~rx_read;
-                rx_read_counter <= 0;
-            end
-            if (rx_read_counter == 4 && rx_read == 1)
-            begin
-                // getting byte here ...
-                rx_cmd_bytes_analyzed <= rx_cmd_bytes_analyzed + 1;
-            end 
-            */
             
             device_state <= CMD_CHECK_STATE;
         end
@@ -338,9 +331,19 @@ begin
             // finalize cmd
             if (cmd_response_required == 1'b1)
             begin
+                // after send set to 0
+                cmd_response_required <= 1'b0;
             end
-            
-            device_state <= AWAIT_CMD_STATE;
+            else
+            begin
+                cmd_processed_received <= 1'b1;
+                cmd_finalize_counter <= cmd_finalize_counter + 1;
+                if (cmd_finalize_counter == 4'b1111)
+                begin
+                    device_state <= AWAIT_CMD_STATE;
+                    cmd_finalize_counter <= 0;
+                end
+            end
         end
         /*SEND_RESPONSE_STATE:
         begin
