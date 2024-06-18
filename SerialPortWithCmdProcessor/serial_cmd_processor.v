@@ -67,6 +67,8 @@ reg  rst = 1'b0;
 reg  rst_generated = 1'b0;
 reg  [7:0] rst_counter;
 reg  rx_read;
+wire fifo_encoder_read;
+wire fifo_read;
 wire rx_err;
 wire [7:0] rx_data;
 wire rx_byte_received;
@@ -100,17 +102,19 @@ reg cmd_processed_received;
 wire cmd_decode_finished;
 wire cmd_decode_success;
 
+assign fifo_read = fifo_encoder_read | rx_read;
+
 quick_rs232 #(.CLK_TICKS_PER_RS232_BIT(434), .DEFAULT_BYTE_LEN(8), .DEFAULT_PARITY(1), .DEFAULT_STOP_BITS(0),
               .DEFAULT_RECV_BUFFER_LEN(16), .DEFAULT_FLOW_CONTROL(0)) 
 serial_dev (.clk(clk), .rst(rst), .rx(rx), .tx(tx), .rts(rts), .cts(cts),
-            .rx_read(rx_read), .rx_err(rx_err), .rx_data(rx_data), .rx_byte_received(rx_byte_received),
+            .rx_read(fifo_read), .rx_err(rx_err), .rx_data(rx_data), .rx_byte_received(rx_byte_received),
             .tx_transaction(tx_transaction), .tx_data(tx_data), .tx_data_ready(tx_data_ready), 
             .tx_data_copied(tx_data_copied), .tx_busy(tx_busy));
 
 serial_cmd_decoder #(.MAX_CMD_PAYLOAD_BYTES(8)) 
 decoder (.clk(clk), .rst(rst), .cmd_ready(cmd_ready), .data(rx_data),
          .cmd_processed_received(cmd_processed_received), 
-         .cmd_read_clk(rx_read), .cmd_processed(cmd_decode_finished),
+         .cmd_read_clk(fifo_encoder_read), .cmd_processed(cmd_decode_finished),
          .cmd_decode_success(cmd_decode_success),
          .cmd_payload_r0(r0), .cmd_payload_r1(r1),  .cmd_payload_r2(r2),
          .cmd_payload_r3(r3), .cmd_payload_r4(r4),  .cmd_payload_r5(r5),
@@ -184,7 +188,7 @@ begin
 end
 
 // received and non send bytes counter
-always @(posedge rst or negedge rx_byte_received or posedge rx_read)
+always @(posedge rst or negedge rx_byte_received or posedge fifo_read)
 begin
     if (rst == 1'b1)
     begin
