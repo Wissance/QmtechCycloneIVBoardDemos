@@ -52,9 +52,9 @@ localparam reg [3:0] AWAIT_CMD_STATE = 4'b0001;
 localparam reg [3:0] CMD_DECODE_STATE = 4'b0010;
 localparam reg [3:0] CMD_CHECK_STATE = 4'b0011;
 localparam reg [3:0] CMD_DETECTED_STATE = 4'b0100;
-// ???????????????// probably should be removed ...
 localparam reg [3:0] CMD_EXECUTE_STATE = 4'b0101;
-localparam reg [3:0] SEND_RESPONSE_STATE = 4'b0110;
+localparam reg [3:0] CMD_FINALIZE_STATE = 4'b0110;
+localparam reg [3:0] SEND_RESPONSE_STATE = 4'b0111;
 //localparam reg [3:0] RESPONSE_SENT_STATE = 4'b0111;
 //localparam reg [3:0] OPERATION_TIMEOUT_STATE = 4'b1111;
 
@@ -92,13 +92,26 @@ reg  [15:0] cmd_receive_timeout;
 reg  [7:0] cmd_bytes_counter;
 reg  [7:0] rx_read_counter;
 reg  [7:0] rx_cmd_bytes_analyzed;
+wire [7:0] r0, r1, r2, r3, r4, r5, r6, r7;
+reg cmd_ready;
+reg cmd_response_required;
+wire cmd_decode_finished;
+wire cmd_decode_success;
 
 quick_rs232 #(.CLK_TICKS_PER_RS232_BIT(434), .DEFAULT_BYTE_LEN(8), .DEFAULT_PARITY(1), .DEFAULT_STOP_BITS(0),
-              .DEFAULT_RECV_BUFFER_LEN(8), .DEFAULT_FLOW_CONTROL(0)) 
+              .DEFAULT_RECV_BUFFER_LEN(16), .DEFAULT_FLOW_CONTROL(0)) 
 serial_dev (.clk(clk), .rst(rst), .rx(rx), .tx(tx), .rts(rts), .cts(cts),
             .rx_read(rx_read), .rx_err(rx_err), .rx_data(rx_data), .rx_byte_received(rx_byte_received),
             .tx_transaction(tx_transaction), .tx_data(tx_data), .tx_data_ready(tx_data_ready), 
             .tx_data_copied(tx_data_copied), .tx_busy(tx_busy));
+
+serial_cmd_decoder #(.MAX_CMD_PAYLOAD_BYTES(8)) 
+decoder (.clk(clk), .rst(rst), .cmd_ready(cmd_ready), .data(rx_data),
+         .cmd_processed_received(), .cmd_read_clk(rx_read), .cmd_processed(),
+         .cmd_bytes_processed(), .cmd_decode_success(),
+         .cmd_payload_r0(r0), .cmd_payload_r1(r1),  .cmd_payload_r2(r2),
+         .cmd_payload_r3(r3), .cmd_payload_r4(r4),  .cmd_payload_r5(r5),
+         .cmd_payload_r6(r6), .cmd_payload_r7(r7));
 
 //this always implements the global reset that board generates at start
 always @(posedge clk)
@@ -207,6 +220,7 @@ begin
         rx_read <= 1'b0;
         rx_read_counter <= 0;
         rx_cmd_bytes_analyzed <= 0;
+        cmd_response_required <= 1'b0;
     end
     else
     begin
@@ -236,6 +250,8 @@ begin
                 cmd_bytes_counter <= 0;
                 rx_read_counter <= 0;
                 rx_cmd_bytes_analyzed <= 0;
+                cmd_ready <= 1'b0;
+                cmd_response_required <= 1'b0;
             end
         end
         AWAIT_CMD_STATE:
@@ -252,6 +268,7 @@ begin
                         device_state <= CMD_DECODE_STATE;
                         rx_read_counter <= 0;
                         rx_cmd_bytes_analyzed <= 0;
+                        cmd_ready <= 1'b1;
                     end
                     else
                     begin
@@ -269,13 +286,17 @@ begin
         end
         CMD_DECODE_STATE:
         begin
+            if (cmd_decode_finished == 1'b1)
+            begin
+                device_state <= CMD_CHECK_STATE;
+            end
             // we should n't check, prepare for cmd check && detection
             // there are multiple options: 
             // 1. we'got a trash (not a command)
-            // 2. we'got a comand but with wrong data, or incomplete command
+            // 2. we'got a command but with wrong data, or incomplete command
             // 3. we'got a valid command
             // count <= count + 1 , if count == max, read ...
-            rx_read_counter <= rx_read_counter + 1;
+            /* rx_read_counter <= rx_read_counter + 1;
             if (rx_read_counter == 8)
             begin
                 rx_read <= ~rx_read;
@@ -285,29 +306,46 @@ begin
             begin
                 // getting byte here ...
                 rx_cmd_bytes_analyzed <= rx_cmd_bytes_analyzed + 1;
-            end
+            end 
+            */
             
             device_state <= CMD_CHECK_STATE;
         end
         CMD_CHECK_STATE:
         begin
-            // probably different module, await for check
-             device_state <= CMD_DETECTED_STATE;
+            if (cmd_decode_success == 1'b1)
+            begin
+                device_state <= CMD_DETECTED_STATE;
+                cmd_response_required <= 1'b1;
+            end
+            else
+            begin
+                device_state <= CMD_FINALIZE_STATE;
+                cmd_response_required <= 1'b0;
+            end
         end
         CMD_DETECTED_STATE:
         begin
-            // prepare 4 execution
             device_state <= CMD_EXECUTE_STATE;
         end
         CMD_EXECUTE_STATE:
         begin
-            // execute cmd
-            device_state <= SEND_RESPONSE_STATE;
+            // execute cmd: get or set register ...
+            device_state <= CMD_FINALIZE_STATE;
         end
-        SEND_RESPONSE_STATE:
+        CMD_FINALIZE_STATE:
+        begin
+            // finalize cmd
+            if (cmd_response_required == 1'b1)
+            begin
+            end
+            
+            device_state <= AWAIT_CMD_STATE;
+        end
+        /*SEND_RESPONSE_STATE:
         begin
             device_state <= INITIAL_STATE;
-        end
+        end*/
         default:
         begin
             device_state <= INITIAL_STATE;
