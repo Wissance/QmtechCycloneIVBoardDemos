@@ -97,6 +97,8 @@ reg  [7:0] rx_read_counter;
 reg  [7:0] rx_cmd_bytes_analyzed;
 wire [7:0] r0, r1, r2, r3, r4, r5, r6, r7;
 reg  [7:0] r0_w, r1_w, r2_w, r3_w, r4_w, r5_w, r6_w, r7_w;
+reg  [7:0] cmd_response [0: 14];
+reg  [3:0] cmd_response_bytes;
 reg  [3:0] cmd_finalize_counter;
 reg cmd_ready;
 reg cmd_response_required;
@@ -239,10 +241,12 @@ begin
         cmd_response_required <= 1'b0;
         cmd_processed_received <= 1'b0;
         cmd_finalize_counter <= 0;
+        // TODO(UMV): make 8 const -> REG_MEMORY_DEPTH
         for (c = 0; c < 8; c = c + 1)
-        begin
             memory[c] <= 32'h00000000;
-        end
+        for (c = 0; c < 15; c = c + 1)
+            cmd_response <= 8'h00;
+        cmd_response_bytes <= 0;
     end
     else
     begin
@@ -349,21 +353,45 @@ begin
                 memory[r1] [15:8] <= r3;
                 memory[r1] [23:16] <= r4;
                 memory[r1] [31:24] <= r5;
+                // SET cmd_response ...
+                cmd_reponse[0] <= 8'hff;
+                cmd_reponse[1] <= 8'hff;
+                cmd_reponse[2] <= 8'h00;
+                cmd_reponse[3] <= 8'h01;
+                cmd_reponse[4] <= 8'h01;
+                cmd_reponse[5] <= 8'hee;
+                cmd_reponse[6] <= 8'hee;
+
+                cmd_response_bytes <= 7;
             end
             else
             begin
                 if (r0 == GET_REG_CMD)
                 begin
-                    r1_w <= r1;
-                    r2_w <= memory[r1] [7:0];
-                    r3_w <= memory[r1] [15:8];
-                    r4_w <= memory[r1] [23:16];
-                    r5_w <= memory[r1] [31:24];
+                    // SET cmd_response ...
+                    cmd_reponse[0] <= 8'hff;
+                    cmd_reponse[1] <= 8'hff;
+                    cmd_reponse[2] <= 8'h00;
+                    cmd_reponse[3] <= 8'h04;
+                    cmd_reponse[4] <= memory[r1] [7:0];
+                    cmd_reponse[5] <= memory[r1] [15:8];
+                    cmd_reponse[6] <= memory[r1] [23:16];
+                    cmd_reponse[7] <= memory[r1] [31:24];
+                    cmd_reponse[8] <= 8'hee;
+                    cmd_reponse[9] <= 8'hee;
+                    cmd_response_bytes <= 10;
                 end
-                // TODO(UMV): Handle wrong cmd too
                 else
                 begin
-                    cmd_response_required <= 1'b0;
+                    cmd_reponse[0] <= 8'hff;
+                    cmd_reponse[1] <= 8'hff;
+                    cmd_reponse[2] <= 8'h00;
+                    cmd_reponse[3] <= 8'h01;
+                    cmd_reponse[4] <= 8'h02;
+                    cmd_reponse[5] <= 8'hee;
+                    cmd_reponse[6] <= 8'hee;
+
+                    cmd_response_bytes <= 7;
                 end
             end
         end
@@ -375,10 +403,12 @@ begin
                 // after send set to 0
                 tx_transaction <= 1'b1;
                 // todo(UMV): add decoder module ...
+                // unless we don't have a buffered tx send byte after byte ...
                 cmd_response_required <= 1'b0;
             end
             else
             begin
+                // clean up response ...
                 cmd_processed_received <= 1'b1;
                 cmd_finalize_counter <= cmd_finalize_counter + 1;
                 if (cmd_finalize_counter == 4'b1111)
