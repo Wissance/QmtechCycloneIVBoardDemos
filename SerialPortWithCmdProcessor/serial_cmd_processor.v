@@ -13,7 +13,7 @@
 //                      Consider we have 2 COMMANDS (SET_REG = 0x01), (GET_REG = 0x02)
 //                      We assume that we deal with 4 REGISTERS (0, 1, 2, 3) each register is a 32 bit
 //                                                                    Start     Zero  PayLen                 Payload                  End
-//                      CMD to set Reg2 Value to 1A2B3C4D looks : | 0xFF 0xFF | 0x00 | 0x07 | 0x01 0x02 0xDD 0x4D 0x3C 0x2B 0x1A | 0xEE 0xEE |
+//                      CMD to set Reg2 Value to 1A2B3C4D looks : | 0xFF 0xFF | 0x00 | 0x07 | 0x01 0x02 0x4D 0x3C 0x2B 0x1A | 0xEE 0xEE |
 //                                                                    Start     Zero  PayLen   Payload       End
 //                      CMD to get Reg3 Value                     | 0xFF 0xFF | 0x00 | 0x02 | 0x02 0x03 | 0xEE 0xEE |
 //                      Device should respond on every CMD, on GET -> Value, On SET that Command Approved (0x01) OR Rejected (0x02)
@@ -58,9 +58,10 @@ localparam reg [3:0] SEND_RESPONSE_STATE = 4'b0111;
 //localparam reg [3:0] RESPONSE_SENT_STATE = 4'b0111;
 //localparam reg [3:0] OPERATION_TIMEOUT_STATE = 4'b1111;
 
-
 localparam reg [3:0]  MIN_CMD_LENGTH = 8;
 localparam reg [15:0] MAX_TIMEOUT_BETWEEN_BYTES = 11000; // in cycles of 50MHz
+localparam reg [7:0]  SET_REG_CMD = 1;
+localparam reg [7:0]  GET_REG_CMD = 2;
 
 
 reg  rst = 1'b0;
@@ -101,6 +102,8 @@ reg cmd_response_required;
 reg cmd_processed_received;
 wire cmd_decode_finished;
 wire cmd_decode_success;
+reg [31:0] memory [0:7];
+integer c;
 
 assign fifo_read = fifo_encoder_read | rx_read;
 
@@ -197,7 +200,7 @@ begin
     end
     else
     begin
-        if (rx_read == 1'b1)
+        if (fifo_read == 1'b1)
         begin
             rx_data_ready_trig <= 1'b0;
             if (received_bytes_counter > 0)
@@ -222,14 +225,23 @@ always @(posedge clk)
 begin
     if (rst == 1'b1)
     begin
+        // state regs
         device_state <= INITIAL_STATE;
         cmd_receive_timeout <= 0;
+        // rs232 rx regs
         rx_read <= 1'b0;
         rx_read_counter <= 0;
         rx_cmd_bytes_analyzed <= 0;
+        // rs232 tx regs
+        tx_transaction <= 1'b0;
+        // cmd && memory regs
         cmd_response_required <= 1'b0;
         cmd_processed_received <= 1'b0;
         cmd_finalize_counter <= 0;
+        for (c = 0; c < 8; c = c + 1)
+        begin
+            memory[c] <= 32'h00000000;
+        end
     end
     else
     begin
@@ -259,6 +271,7 @@ begin
                 cmd_bytes_counter <= 0;
                 rx_read_counter <= 0;
                 rx_cmd_bytes_analyzed <= 0;
+                tx_transaction <= 1'b0;
                 cmd_ready <= 1'b0;
                 cmd_response_required <= 1'b0;
                 cmd_processed_received <= 1'b0;
@@ -327,8 +340,30 @@ begin
         end
         CMD_EXECUTE_STATE:
         begin
-            // execute cmd: get or set register ...
+            // execute cmd: get or set register
             device_state <= CMD_FINALIZE_STATE;
+            if (r0 == SET_REG_CMD)
+            begin
+                memory[r1] [7:0] <= r2;
+                memory[r1] [15:8] <= r3;
+                memory[r1] [23:16] <= r4;
+                memory[r1] [31:24] <= r5;
+            end
+            else
+            begin
+                if (r0 == GET_REG_CMD)
+                begin
+                    //r2 <= memory[r1] [7:0];
+                    //r3 <= memory[r1] [15:8];
+                    //r4 <= memory[r1] [23:16];
+                    //r5 <= memory[r1] [31:24];
+                end
+                // TODO(UMV): Handle wrong cmd too
+                else
+                begin
+                    cmd_response_required <= 1'b0;
+                end
+            end
         end
         CMD_FINALIZE_STATE:
         begin
@@ -336,6 +371,8 @@ begin
             if (cmd_response_required == 1'b1)
             begin
                 // after send set to 0
+                tx_transaction <= 1'b1;
+                // todo(UMV): add decoder module ...
                 cmd_response_required <= 1'b0;
             end
             else
