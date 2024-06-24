@@ -96,10 +96,11 @@ reg  [7:0] cmd_bytes_counter;
 reg  [7:0] rx_read_counter;
 reg  [7:0] rx_cmd_bytes_analyzed;
 wire [7:0] r0, r1, r2, r3, r4, r5, r6, r7;
-reg  [7:0] r0_w, r1_w, r2_w, r3_w, r4_w, r5_w, r6_w, r7_w;
 reg  [7:0] cmd_response [0: 14];
 reg  [3:0] cmd_response_bytes;
+reg  [3:0] cmd_tx_bytes_counter;
 reg  [3:0] cmd_finalize_counter;
+reg cmd_next_byte_protect;
 reg cmd_ready;
 reg cmd_response_required;
 reg cmd_processed_received;
@@ -247,6 +248,8 @@ begin
         for (c = 0; c < 15; c = c + 1)
             cmd_response[c] <= 8'h00;
         cmd_response_bytes <= 0;
+        cmd_tx_bytes_counter <= 0;
+        cmd_next_byte_protect <= 0;
     end
     else
     begin
@@ -280,6 +283,8 @@ begin
                 cmd_ready <= 1'b0;
                 cmd_response_required <= 1'b0;
                 cmd_processed_received <= 1'b0;
+                cmd_response_bytes <= 0;
+                cmd_tx_bytes_counter <= 0;
             end
         end
         AWAIT_CMD_STATE:
@@ -347,6 +352,8 @@ begin
         begin
             // execute cmd: get or set register
             device_state <= CMD_FINALIZE_STATE;
+            cmd_tx_bytes_counter <= 0;
+            cmd_next_byte_protect <= 0;
             if (r0 == SET_REG_CMD)
             begin
                 memory[r1] [7:0] <= r2;
@@ -403,8 +410,32 @@ begin
                 // after send set to 0
                 tx_transaction <= 1'b1;
                 // todo(UMV): add decoder module ...
+                if (tx_busy == 1'b0)
+                begin
+                    if (cmd_tx_bytes_counter == cmd_response_bytes)
+                    begin
+                        // ...stop...
+                        cmd_response_required <= 1'b0;
+                    end
+                    else
+                    begin
+                        tx_data <= cmd_response[cmd_tx_bytes_counter];
+                        tx_data_ready <= 1'b1;
+                        cmd_next_byte_protect <= 1'b0;
+                    end
+                end
+                else
+                begin
+                    if (tx_data_copied == 1'b0)
+                    begin
+                        if (cmd_next_byte_protect == 1'b0)
+                        begin
+                            cmd_tx_bytes_counter <= cmd_tx_bytes_counter + 1;
+                            cmd_next_byte_protect <= 1'b1;
+                        end
+                    end
+                end
                 // unless we don't have a buffered tx send byte after byte ...
-                cmd_response_required <= 1'b0;
             end
             else
             begin
@@ -418,10 +449,6 @@ begin
                 end
             end
         end
-        /*SEND_RESPONSE_STATE:
-        begin
-            device_state <= INITIAL_STATE;
-        end*/
         default:
         begin
             device_state <= INITIAL_STATE;
