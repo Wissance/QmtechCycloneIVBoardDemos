@@ -96,6 +96,7 @@ reg  [7:0] cmd_bytes_counter;
 reg  [7:0] rx_read_counter;
 reg  [7:0] rx_cmd_bytes_analyzed;
 wire [7:0] r0, r1, r2, r3, r4, r5, r6, r7;
+reg  [7:0] r0_w, r1_w, r2_w, r3_w, r4_w, r5_w, r6_w, r7_w;
 reg  [3:0] cmd_finalize_counter;
 reg cmd_ready;
 reg cmd_response_required;
@@ -353,10 +354,11 @@ begin
             begin
                 if (r0 == GET_REG_CMD)
                 begin
-                    //r2 <= memory[r1] [7:0];
-                    //r3 <= memory[r1] [15:8];
-                    //r4 <= memory[r1] [23:16];
-                    //r5 <= memory[r1] [31:24];
+                    r1_w <= r1;
+                    r2_w <= memory[r1] [7:0];
+                    r3_w <= memory[r1] [15:8];
+                    r4_w <= memory[r1] [23:16];
+                    r5_w <= memory[r1] [31:24];
                 end
                 // TODO(UMV): Handle wrong cmd too
                 else
