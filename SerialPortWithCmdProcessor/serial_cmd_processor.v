@@ -245,7 +245,7 @@ begin
         for (c = 0; c < 8; c = c + 1)
             memory[c] <= 32'h00000000;
         for (c = 0; c < 15; c = c + 1)
-            cmd_response <= 8'h00;
+            cmd_response[c] <= 8'h00;
         cmd_response_bytes <= 0;
     end
     else
@@ -354,13 +354,13 @@ begin
                 memory[r1] [23:16] <= r4;
                 memory[r1] [31:24] <= r5;
                 // SET cmd_response ...
-                cmd_reponse[0] <= 8'hff;
-                cmd_reponse[1] <= 8'hff;
-                cmd_reponse[2] <= 8'h00;
-                cmd_reponse[3] <= 8'h01;
-                cmd_reponse[4] <= 8'h01;
-                cmd_reponse[5] <= 8'hee;
-                cmd_reponse[6] <= 8'hee;
+                cmd_response[0] <= 8'hff;
+                cmd_response[1] <= 8'hff;
+                cmd_response[2] <= 8'h00;
+                cmd_response[3] <= 8'h01;
+                cmd_response[4] <= 8'h01;
+                cmd_response[5] <= 8'hee;
+                cmd_response[6] <= 8'hee;
 
                 cmd_response_bytes <= 7;
             end
@@ -369,27 +369,27 @@ begin
                 if (r0 == GET_REG_CMD)
                 begin
                     // SET cmd_response ...
-                    cmd_reponse[0] <= 8'hff;
-                    cmd_reponse[1] <= 8'hff;
-                    cmd_reponse[2] <= 8'h00;
-                    cmd_reponse[3] <= 8'h04;
-                    cmd_reponse[4] <= memory[r1] [7:0];
-                    cmd_reponse[5] <= memory[r1] [15:8];
-                    cmd_reponse[6] <= memory[r1] [23:16];
-                    cmd_reponse[7] <= memory[r1] [31:24];
-                    cmd_reponse[8] <= 8'hee;
-                    cmd_reponse[9] <= 8'hee;
+                    cmd_response[0] <= 8'hff;
+                    cmd_response[1] <= 8'hff;
+                    cmd_response[2] <= 8'h00;
+                    cmd_response[3] <= 8'h04;
+                    cmd_response[4] <= memory[r1] [7:0];
+                    cmd_response[5] <= memory[r1] [15:8];
+                    cmd_response[6] <= memory[r1] [23:16];
+                    cmd_response[7] <= memory[r1] [31:24];
+                    cmd_response[8] <= 8'hee;
+                    cmd_response[9] <= 8'hee;
                     cmd_response_bytes <= 10;
                 end
                 else
                 begin
-                    cmd_reponse[0] <= 8'hff;
-                    cmd_reponse[1] <= 8'hff;
-                    cmd_reponse[2] <= 8'h00;
-                    cmd_reponse[3] <= 8'h01;
-                    cmd_reponse[4] <= 8'h02;
-                    cmd_reponse[5] <= 8'hee;
-                    cmd_reponse[6] <= 8'hee;
+                    cmd_response[0] <= 8'hff;
+                    cmd_response[1] <= 8'hff;
+                    cmd_response[2] <= 8'h00;
+                    cmd_response[3] <= 8'h01;
+                    cmd_response[4] <= 8'h02;
+                    cmd_response[5] <= 8'hee;
+                    cmd_response[6] <= 8'hee;
 
                     cmd_response_bytes <= 7;
                 end
