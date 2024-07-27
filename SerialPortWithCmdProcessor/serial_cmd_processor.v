@@ -257,6 +257,8 @@ begin
         cmd_response_bytes <= 0;
         cmd_tx_bytes_counter <= 0;
         cmd_next_byte_protect <= 0;
+
+        led_bus <= 8'b11111111;
     end
     else
     begin
@@ -297,18 +299,21 @@ begin
         AWAIT_CMD_STATE:
         begin
             cmd_receive_timeout <= cmd_receive_timeout + 1;
+            // led_bus <= ~received_bytes_counter;
             // check receive, accumulate ...
-            if (cmd_receive_timeout == MAX_TIMEOUT_BETWEEN_BYTES)
+            if (cmd_receive_timeout == MAX_TIMEOUT_BETWEEN_BYTES)  // 
             begin
+                // received_bytes_counter is a counter of received bytes in separate always block
                 if (received_bytes_counter == cmd_bytes_counter)
                 begin
                     // 1. pause after BATCH, if we have enough bytes - analyze
-                    if (received_bytes_counter >= MIN_CMD_LENGTH)
+                    if (cmd_bytes_counter >= MIN_CMD_LENGTH)
                     begin
                         device_state <= CMD_DECODE_STATE;
                         rx_read_counter <= 0;
                         rx_cmd_bytes_analyzed <= 0;
                         cmd_ready <= 1'b1;
+                        led_bus[0] <= 0; // 0 mean led is lighting
                     end
                     else
                     begin
@@ -321,6 +326,7 @@ begin
                 else
                 begin
                     cmd_receive_timeout <= 0;
+                    cmd_bytes_counter <= received_bytes_counter;
                 end
             end
             cmd_ready <= 1'b0;
@@ -344,11 +350,17 @@ begin
             begin
                 device_state <= CMD_DETECTED_STATE;
                 cmd_response_required <= 1'b1;
+                // cmd decoded successfully
+                led_bus[1] <= 0;
+                led_bus[2] <= 1;
             end
             else
             begin
                 device_state <= CMD_FINALIZE_STATE;
                 cmd_response_required <= 1'b0;
+                // cmd decode failed
+                led_bus[1] <= 1;
+                led_bus[2] <= 0;
             end
         end
         CMD_DETECTED_STATE:
