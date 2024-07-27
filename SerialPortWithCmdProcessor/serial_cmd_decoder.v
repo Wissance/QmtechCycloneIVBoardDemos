@@ -130,13 +130,6 @@ begin
                 eof_bytes_counter <= 0;
                 payload_len <= 0;
                 payload_counter <= 0;
-
-                bad_sof <= 1'b0;
-                no_space <= 1'b0;
-                to_much_payload <= 1'b0;
-                payload_mismatch <= 1'b0;
-                bad_eof <= 1'b0;
-                current_byte <= 8'h00;
             end
             AWAIT_CMD_STATE:
             begin
@@ -150,12 +143,12 @@ begin
                         cmd_read_clk <= 1'b0;
                         for (i = 0; i < MAX_CMD_PAYLOAD_BYTES; i = i + 1)
                             mem[i] <= 0;
-                        bad_sof <= 1'b0;
-                        no_space <= 1'b0;
-                        to_much_payload <= 1'b0;
-                        payload_mismatch <= 1'b0;
-                        bad_eof <= 1'b0;
-                        current_byte <= 8'h00;
+                        //bad_sof <= 1'b0;
+                        //no_space <= 1'b0;
+                        //to_much_payload <= 1'b0;
+                        //payload_mismatch <= 1'b0;
+                        //bad_eof <= 1'b0;
+                        //current_byte <= 8'h00;
                     end
                 end
                 

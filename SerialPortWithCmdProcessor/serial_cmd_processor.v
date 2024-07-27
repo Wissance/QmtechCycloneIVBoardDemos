@@ -349,9 +349,12 @@ begin
             begin
                 device_state <= CMD_CHECK_STATE;
                 cmd_ready <= 1'b0;
+                // display reasons of err
+                led_bus[3] <= !bad_sof;
+                led_bus[4] <= !no_space;
+                led_bus[5] <= !bad_payload;
+                led_bus[6] <= !bad_eof;
             end
-            
-            device_state <= CMD_CHECK_STATE;
         end
         CMD_CHECK_STATE:
         begin
@@ -370,11 +373,6 @@ begin
                 // cmd decode failed
                 led_bus[1] <= 1;
                 led_bus[2] <= 0;
-                // display reasons of err
-                led_bus[3] <= ~bad_sof;
-                led_bus[4] <= ~no_space;
-                led_bus[5] <= ~bad_payload;
-                led_bus[6] <= ~bad_eof;
             end
         end
         CMD_DETECTED_STATE:
