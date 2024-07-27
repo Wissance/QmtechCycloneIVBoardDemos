@@ -65,7 +65,7 @@ localparam reg [7:0]  GET_REG_CMD = 2;
 reg  rst = 1'b0;
 reg  rst_generated = 1'b0;
 reg  [7:0] rst_counter;
-// 2. set of register used for RS232 Rx ...
+// 2. set of register && wires used for RS232 Rx
 reg  rx_read;
 wire rx_err;
 wire [7:0] rx_data;
@@ -73,7 +73,7 @@ wire rx_byte_received;
 wire has_rx_data;
 wire fifo_encoder_read;
 wire fifo_read;
-
+// 3. set of register && wires used for RS232 Tx
 reg  tx_transaction;
 reg  [7:0] tx_data;
 reg  tx_data_ready;
@@ -110,6 +110,13 @@ wire cmd_decode_success;
 reg [31:0] memory [0:7];
 integer c;
 
+// N. a set of registers && wires used for debugging issues with cmd decoding
+wire bad_sof;
+wire no_space;
+wire bad_payload;
+wire bad_eof;
+wire [7:0] current_byte;
+
 assign fifo_read = fifo_encoder_read | rx_read;
 
 quick_rs232 #(.CLK_TICKS_PER_RS232_BIT(434), .DEFAULT_BYTE_LEN(8), .DEFAULT_PARITY(1), .DEFAULT_STOP_BITS(0),
@@ -126,7 +133,9 @@ decoder (.clk(clk), .rst(rst), .cmd_ready(cmd_ready), .data(rx_data),
          .cmd_decode_success(cmd_decode_success),
          .cmd_payload_r0(r0), .cmd_payload_r1(r1),  .cmd_payload_r2(r2),
          .cmd_payload_r3(r3), .cmd_payload_r4(r4),  .cmd_payload_r5(r5),
-         .cmd_payload_r6(r6), .cmd_payload_r7(r7));
+         .cmd_payload_r6(r6), .cmd_payload_r7(r7),
+         .bad_sof(bad_sof), .no_space(no_space), .to_much_payload(bad_payload), 
+         .bad_eof(bad_eof), .current_byte(current_byte));
 
 assign rx_led = (rst_generated == 1'b1) ? rx_blink : 1'b1;
 assign tx_led = (rst_generated == 1'b1) ? tx_blink : 1'b1;
@@ -134,7 +143,7 @@ assign has_rx_data = received_bytes_counter[0]|received_bytes_counter[1]|receive
                      received_bytes_counter[3]|received_bytes_counter[4]|received_bytes_counter[5]|
                      received_bytes_counter[6]|received_bytes_counter[7];
 
-//this always implements the global reset that board generates at start
+// this always implements the global reset that board generates at start
 always @(posedge clk)
 begin
     if (rst_generated != 1'b1)
@@ -286,6 +295,7 @@ begin
                 device_state <= AWAIT_CMD_STATE;
                 cmd_receive_timeout <= 0;
                 cmd_bytes_counter <= 0;
+                rx_read <= 1'b0;
                 rx_read_counter <= 0;
                 rx_cmd_bytes_analyzed <= 0;
                 tx_transaction <= 1'b0;
@@ -299,7 +309,6 @@ begin
         AWAIT_CMD_STATE:
         begin
             cmd_receive_timeout <= cmd_receive_timeout + 1;
-            // led_bus <= ~received_bytes_counter;
             // check receive, accumulate ...
             if (cmd_receive_timeout == MAX_TIMEOUT_BETWEEN_BYTES)  // 
             begin
@@ -361,6 +370,11 @@ begin
                 // cmd decode failed
                 led_bus[1] <= 1;
                 led_bus[2] <= 0;
+                // display reasons of err
+                led_bus[3] <= ~bad_sof;
+                led_bus[4] <= ~no_space;
+                led_bus[5] <= ~bad_payload;
+                led_bus[6] <= ~bad_eof;
             end
         end
         CMD_DETECTED_STATE:
