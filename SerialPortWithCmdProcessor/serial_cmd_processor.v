@@ -28,7 +28,7 @@
 module serial_cmd_processor(
     // Global Signals
     input  wire clk,                                     // clk is a clock 
-    // input wire rst,                                      // rst is a global reset system
+    // input wire rst,                                   // rst is a global reset system
     // External RS232 Interface
     input  wire rx,                                      // rx  - receive  (1 bit line for receive data)
     output wire tx,                                      // tx  - transmit (1 bit line for transmit data)
@@ -55,30 +55,31 @@ localparam reg [3:0] CMD_DETECTED_STATE = 4'b0100;
 localparam reg [3:0] CMD_EXECUTE_STATE = 4'b0101;
 localparam reg [3:0] CMD_FINALIZE_STATE = 4'b0110;
 localparam reg [3:0] SEND_RESPONSE_STATE = 4'b0111;
-//localparam reg [3:0] RESPONSE_SENT_STATE = 4'b0111;
-//localparam reg [3:0] OPERATION_TIMEOUT_STATE = 4'b1111;
 
 localparam reg [3:0]  MIN_CMD_LENGTH = 8;
 localparam reg [15:0] MAX_TIMEOUT_BETWEEN_BYTES = 11000; // in cycles of 50MHz
 localparam reg [7:0]  SET_REG_CMD = 1;
 localparam reg [7:0]  GET_REG_CMD = 2;
 
-
+// 1. set of register related to board reset
 reg  rst = 1'b0;
 reg  rst_generated = 1'b0;
 reg  [7:0] rst_counter;
+// 2. set of register used for RS232 Rx ...
 reg  rx_read;
-wire fifo_encoder_read;
-wire fifo_read;
 wire rx_err;
 wire [7:0] rx_data;
 wire rx_byte_received;
+wire has_rx_data;
+wire fifo_encoder_read;
+wire fifo_read;
+
 reg  tx_transaction;
 reg  [7:0] tx_data;
 reg  tx_data_ready;
 wire tx_data_copied;
 wire tx_busy;
-wire has_rx_data;
+
 reg  [7:0] data_buffer;
 reg  [3:0] serial_data_exchange_state;
 reg  [7:0] delay_counter;
@@ -126,6 +127,12 @@ decoder (.clk(clk), .rst(rst), .cmd_ready(cmd_ready), .data(rx_data),
          .cmd_payload_r0(r0), .cmd_payload_r1(r1),  .cmd_payload_r2(r2),
          .cmd_payload_r3(r3), .cmd_payload_r4(r4),  .cmd_payload_r5(r5),
          .cmd_payload_r6(r6), .cmd_payload_r7(r7));
+
+assign rx_led = (rst_generated == 1'b1) ? rx_blink : 1'b1;
+assign tx_led = (rst_generated == 1'b1) ? tx_blink : 1'b1;
+assign has_rx_data = received_bytes_counter[0]|received_bytes_counter[1]|received_bytes_counter[2]|
+                     received_bytes_counter[3]|received_bytes_counter[4]|received_bytes_counter[5]|
+                     received_bytes_counter[6]|received_bytes_counter[7];
 
 //this always implements the global reset that board generates at start
 always @(posedge clk)
