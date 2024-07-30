@@ -95,7 +95,7 @@ assign cmd_payload_r7 = mem[7];
 
 always @(posedge clk)
 begin
-    if (rst)
+    if (rst == 1'b1)
     begin
         state <= INITIAL_STATE;
         cmd_bytes_processed <= 0;
@@ -343,13 +343,13 @@ begin
             end
             AWAIT_NOTIFICATION_STATE:
             begin
-                if (cmd_processed_received == 1'b1)
-                begin
+                //if (cmd_processed_received == 1'b1)
+                //begin
                     cmd_processed <= 1'b0;
                     cmd_decode_success <= 1'b0;
                     state <= AWAIT_CMD_STATE;
                     cmd_read_clk <= 1'b0;
-                end
+                //end
             end
             default:
             begin

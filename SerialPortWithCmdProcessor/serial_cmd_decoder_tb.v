@@ -4,7 +4,6 @@
 // Engineer:            EvilLord666 (Ushakov MV - https://github.com/EvilLord666)
 // 
 // Create Date:         29.06.2023 
-// Design Name:         SerialPortEcho
 // Design Name:         SerialCmdProcessor
 // Module Name:         serial_cmd_decoder_tb
 // Project Name:        SerialCmdProcessor

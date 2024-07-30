@@ -116,6 +116,7 @@ wire no_space;
 wire bad_payload;
 wire bad_eof;
 wire [7:0] current_byte;
+wire [7:0] bytes_processed;
 
 assign fifo_read = fifo_encoder_read | rx_read;
 
@@ -135,7 +136,7 @@ decoder (.clk(clk), .rst(rst), .cmd_ready(cmd_ready), .data(rx_data),
          .cmd_payload_r3(r3), .cmd_payload_r4(r4),  .cmd_payload_r5(r5),
          .cmd_payload_r6(r6), .cmd_payload_r7(r7),
          .bad_sof(bad_sof), .no_space(no_space), .to_much_payload(bad_payload), 
-         .bad_eof(bad_eof), .current_byte(current_byte));
+         .bad_eof(bad_eof), .current_byte(current_byte), .cmd_bytes_processed(bytes_processed));
 
 assign rx_led = (rst_generated == 1'b1) ? rx_blink : 1'b1;
 assign tx_led = (rst_generated == 1'b1) ? tx_blink : 1'b1;
@@ -321,6 +322,7 @@ begin
                         device_state <= CMD_DECODE_STATE;
                         rx_read_counter <= 0;
                         rx_cmd_bytes_analyzed <= 0;
+                        cmd_processed_received <= 1'b0;
                         cmd_ready <= 1'b1;
                         led_bus[0] <= 0; // 0 mean led is lighting
                     end
@@ -345,34 +347,38 @@ begin
         end
         CMD_DECODE_STATE:
         begin
+            cmd_ready <= 1'b1;
             if (cmd_decode_finished == 1'b1)
             begin
                 device_state <= CMD_CHECK_STATE;
-                cmd_ready <= 1'b0;
                 // display reasons of err
-                led_bus[3] <= !bad_sof;
+                /*led_bus[3] <= !bad_sof;
                 led_bus[4] <= !no_space;
                 led_bus[5] <= !bad_payload;
-                led_bus[6] <= !bad_eof;
+                led_bus[6] <= !bad_eof;*/
+                // led_bus <= ~ current_byte;
+                // led_bus <= ~ bytes_processed;
+                led_bus <= received_bytes_counter;
             end
         end
         CMD_CHECK_STATE:
         begin
+            cmd_ready <= 1'b0;
             if (cmd_decode_success == 1'b1)
             begin
                 device_state <= CMD_DETECTED_STATE;
                 cmd_response_required <= 1'b1;
                 // cmd decoded successfully
-                led_bus[1] <= 0;
-                led_bus[2] <= 1;
+                //led_bus[1] <= 0;
+                //led_bus[2] <= 1;
             end
             else
             begin
                 device_state <= CMD_FINALIZE_STATE;
                 cmd_response_required <= 1'b0;
                 // cmd decode failed
-                led_bus[1] <= 1;
-                led_bus[2] <= 0;
+                //led_bus[1] <= 1;
+                //led_bus[2] <= 0;
             end
         end
         CMD_DETECTED_STATE:
