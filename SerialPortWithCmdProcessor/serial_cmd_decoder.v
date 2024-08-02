@@ -66,7 +66,7 @@ localparam reg [3:0] CMD_STOP_PROCESSING_STATE = 4'b0110;
 localparam reg [3:0] AWAIT_NOTIFICATION_STATE = 4'b0111;
 
 localparam reg [7:0] BYTE_READ_CLK_DELAY = 16;
-localparam reg [7:0] BYTE_READ_DATA_DELAY = 25;
+localparam reg [7:0] BYTE_READ_DATA_DELAY = 8;
 localparam reg [7:0] BYTE_READ_END_DELAY = 32;
 localparam reg [7:0] SOF_BYTE = 8'hff;
 localparam reg [7:0] EOF_BYTE = 8'hee;
@@ -162,7 +162,33 @@ begin
                     // 2. assume that on first iteration we trigger from 0 to 1
                     cmd_read_clk <= ~cmd_read_clk;
                 end
-                if (byte_read_delay_counter == BYTE_READ_DATA_DELAY)
+                if (cmd_read_clk == 1'b1)
+                begin
+                    if (byte_read_delay_counter == BYTE_READ_DATA_DELAY)
+                    begin
+                        if (data == SOF_BYTE)
+                        begin
+                            sof_bytes_counter <= sof_bytes_counter + 1;
+                            cmd_bytes_processed <= cmd_bytes_processed + 1;
+                            bad_sof <= 1'b0;
+                        end
+                        else
+                        begin
+                            // 5. notify on error because byte is not START OF FRAME
+                            cmd_processed <= 1'b1;
+                            cmd_decode_success <= 1'b0;
+                            bad_sof <= 1'b1;
+                            current_byte <= data;
+                            state <= INITIAL_STATE;
+                        end
+                    end
+                    if (byte_read_delay_counter == BYTE_READ_CLK_DELAY - 1)
+                    begin
+                        // we don't toggle byte_read_delay_counter to clear it in SPACE processing
+                        state <= CMD_SPACE_PROCESSING_STATE;
+                    end
+                end
+                /*if (byte_read_delay_counter == BYTE_READ_DATA_DELAY)
                 begin
                     // 3. after delay we attempt to read data
                     if (cmd_read_clk == 1'b1)
@@ -195,7 +221,7 @@ begin
                     end
                     // 7. clear delay counter and waiting for another byte
                     byte_read_delay_counter <= 0;
-                end
+                end*/
             end
             CMD_SPACE_PROCESSING_STATE:
             begin
