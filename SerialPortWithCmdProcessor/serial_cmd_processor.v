@@ -325,7 +325,7 @@ begin
                         rx_cmd_bytes_analyzed <= 0;
                         cmd_processed_received <= 1'b0;
                         cmd_ready <= 1'b1;
-                        led_bus[0] <= 0; // 0 mean led is lighting
+                        // led_bus[0] <= 0; // 0 mean led is lighting
                     end
                     else
                     begin
