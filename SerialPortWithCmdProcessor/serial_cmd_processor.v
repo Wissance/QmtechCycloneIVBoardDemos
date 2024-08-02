@@ -255,6 +255,7 @@ begin
         rx_cmd_bytes_analyzed <= 0;
         // rs232 tx regs
         tx_transaction <= 1'b0;
+        tx_data <= 8'h00;
         // cmd && memory regs
         cmd_response_required <= 1'b0;
         cmd_processed_received <= 1'b0;
@@ -356,9 +357,9 @@ begin
                 led_bus[4] <= !no_space;
                 led_bus[5] <= !bad_payload;
                 led_bus[6] <= !bad_eof;*/
-                // led_bus <= ~ current_byte;
+                led_bus <= ~ current_byte;
                 // led_bus <= ~ bytes_processed;
-                led_bus <= received_bytes_counter;
+                // led_bus <= received_bytes_counter;
             end
         end
         CMD_CHECK_STATE:
