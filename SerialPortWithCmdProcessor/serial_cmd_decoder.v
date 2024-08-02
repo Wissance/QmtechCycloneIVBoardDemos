@@ -185,7 +185,8 @@ begin
                     if (byte_read_delay_counter == BYTE_READ_CLK_DELAY - 1)
                     begin
                         // we don't toggle byte_read_delay_counter to clear it in SPACE processing
-                        state <= CMD_SPACE_PROCESSING_STATE;
+                        if (sof_bytes_counter == NUMBER_OF_SOF_BYTES)
+                            state <= CMD_SPACE_PROCESSING_STATE;
                     end
                 end
                 /*if (byte_read_delay_counter == BYTE_READ_DATA_DELAY)
@@ -226,7 +227,7 @@ begin
             CMD_SPACE_PROCESSING_STATE:
             begin
                 // 1. delay, toggle, inc counter, analyze
-                byte_read_delay_counter <= byte_read_delay_counter + 1;
+                /*byte_read_delay_counter <= byte_read_delay_counter + 1;
                 if (byte_read_delay_counter == BYTE_READ_CLK_DELAY)
                 begin
                     // 2. assume that we trigger from 0 to 1
@@ -255,12 +256,38 @@ begin
                     cmd_read_clk <= 1'b0;
                     byte_read_delay_counter <= 0;
                     state <= CMD_PAYLOAD_LENGTH_PROCESSING_STATE;
+                end*/
+                byte_read_delay_counter <= byte_read_delay_counter + 1;
+                if (byte_read_delay_counter == BYTE_READ_CLK_DELAY)
+                begin
+                    cmd_read_clk <= ~cmd_read_clk;
+                end
+                if (cmd_read_clk == 1'b1)
+                begin
+                    if (byte_read_delay_counter == BYTE_READ_DATA_DELAY - 1)
+                    begin
+                        if (data == SPACE_BYTE)
+                        begin
+                            state <= CMD_PAYLOAD_LENGTH_PROCESSING_STATE;
+                            cmd_bytes_processed <= cmd_bytes_processed + 1;
+                            no_space <= 1'b0;
+                        end
+                        else
+                        begin
+                            // 5. notify on error because byte is not START OF FRAME
+                            no_space <= 1'b1;
+                            cmd_processed <= 1'b1;
+                            cmd_decode_success <= 1'b0;
+                            current_byte <= data;
+                            state <= INITIAL_STATE;
+                        end
+                    end
                 end
             end
             CMD_PAYLOAD_LENGTH_PROCESSING_STATE:
             begin
                 // 1. delay, toggle, inc counter, analyze
-                byte_read_delay_counter <= byte_read_delay_counter + 1;
+                /*byte_read_delay_counter <= byte_read_delay_counter + 1;
                 if (byte_read_delay_counter == BYTE_READ_CLK_DELAY)
                 begin
                     // 2. assume that we trigger from 0 to 1
@@ -291,13 +318,37 @@ begin
                     byte_read_delay_counter <= 0;
                     state <=  CMD_PAYLOAD_PROCESSING_STATE;
                     payload_counter <= 0;
+                end*/
+                byte_read_delay_counter <= byte_read_delay_counter + 1;
+                if (byte_read_delay_counter == BYTE_READ_CLK_DELAY)
+                begin
+                    cmd_read_clk <= ~cmd_read_clk;
+                end
+                if (cmd_read_clk == 1'b1)
+                begin
+                    if (byte_read_delay_counter == BYTE_READ_DATA_DELAY - 1)
+                    begin
+                        payload_len <= data;
+                        if(data > MAX_CMD_PAYLOAD_BYTES)
+                        begin
+                            cmd_processed <= 1'b1;
+                            cmd_decode_success <= 1'b0;
+                            state <= INITIAL_STATE;
+                            to_much_payload <= 1'b1;
+                            current_byte <= data;
+                        end
+                        else
+                        begin
+                            state <= CMD_PAYLOAD_PROCESSING_STATE;
+                        end
+                    end
                 end
             end
             CMD_PAYLOAD_PROCESSING_STATE:
             begin
                 payload_mismatch <= 1'b0;  // can't be catch yet (maybe in future)
                 // 1. delay, toggle, inc counter, analyze
-                byte_read_delay_counter <= byte_read_delay_counter + 1;
+                /*byte_read_delay_counter <= byte_read_delay_counter + 1;
                 if (byte_read_delay_counter == BYTE_READ_CLK_DELAY)
                 begin
                     // 2. toggle clk, on fist iteration we toggle from 0 to 1
@@ -322,12 +373,32 @@ begin
                     end
                     cmd_read_clk <= 1'b0;
                     byte_read_delay_counter <= 0;
+                end*/
+                byte_read_delay_counter <= byte_read_delay_counter + 1;
+                if (byte_read_delay_counter == BYTE_READ_CLK_DELAY)
+                begin
+                    // 2. assume that on first iteration we trigger from 0 to 1
+                    cmd_read_clk <= ~cmd_read_clk;
+                end
+                if (cmd_read_clk == 1'b1)
+                begin
+                    if (byte_read_delay_counter == BYTE_READ_DATA_DELAY)
+                    begin
+                        mem[payload_counter] <= data;
+                        payload_counter <= payload_counter + 1;
+                    end
+                    if (byte_read_delay_counter == BYTE_READ_CLK_DELAY - 1)
+                    begin
+                        // we don't toggle byte_read_delay_counter to clear it in SPACE processing
+                        if (payload_counter == payload_len)
+                            state <= CMD_STOP_PROCESSING_STATE;
+                    end
                 end
             end
             CMD_STOP_PROCESSING_STATE:
             begin
                 // 1. delay, toggle, inc counter, analyze
-                byte_read_delay_counter <= byte_read_delay_counter + 1;
+                /*byte_read_delay_counter <= byte_read_delay_counter + 1;
                 if (byte_read_delay_counter == BYTE_READ_CLK_DELAY)
                 begin
                     // 2. toggle clk, on fist iteration we toggle from 0 to 1
@@ -365,6 +436,42 @@ begin
                         end
                     end
                     byte_read_delay_counter <= 0;
+                end*/
+                byte_read_delay_counter <= byte_read_delay_counter + 1;
+                if (byte_read_delay_counter == BYTE_READ_CLK_DELAY)
+                begin
+                    // 2. assume that on first iteration we trigger from 0 to 1
+                    cmd_read_clk <= ~cmd_read_clk;
+                end
+                if (cmd_read_clk == 1'b1)
+                begin
+                    if (byte_read_delay_counter == BYTE_READ_DATA_DELAY)
+                    begin
+                        if (data == EOF_BYTE)
+                        begin
+                            eof_bytes_counter <= eof_bytes_counter + 1;
+                            cmd_bytes_processed <= cmd_bytes_processed + 1;
+                            bad_eof <= 1'b0;
+                        end
+                        else
+                        begin
+                            // 5. notify on error because byte is not START OF FRAME
+                            cmd_processed <= 1'b1;
+                            cmd_decode_success <= 1'b0;
+                            bad_eof <= 1'b1;
+                            current_byte <= data;
+                            state <= INITIAL_STATE;
+                        end
+                    end
+                    if (byte_read_delay_counter == BYTE_READ_CLK_DELAY - 1)
+                    begin
+                        if (eof_bytes_counter == NUMBER_OF_EOF_BYTES)
+                        begin
+                            cmd_processed <= 1'b1;
+                            cmd_decode_success <= 1'b1;
+                            state <= AWAIT_NOTIFICATION_STATE;
+                        end
+                    end
                 end
             end
             AWAIT_NOTIFICATION_STATE:
