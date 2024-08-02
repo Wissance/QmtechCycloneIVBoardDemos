@@ -64,6 +64,7 @@ localparam reg [3:0] CMD_PAYLOAD_LENGTH_PROCESSING_STATE = 4'b0100;
 localparam reg [3:0] CMD_PAYLOAD_PROCESSING_STATE = 4'b0101;
 localparam reg [3:0] CMD_STOP_PROCESSING_STATE = 4'b0110;
 localparam reg [3:0] AWAIT_NOTIFICATION_STATE = 4'b0111;
+localparam reg [3:0] AWAIT_CMD_CLEAR_STATE = 4'b1000;
 
 localparam reg [7:0] BYTE_READ_CLK_DELAY = 16;
 localparam reg [7:0] BYTE_READ_DATA_DELAY = 8;
@@ -141,6 +142,11 @@ begin
                         cmd_processed <= 1'b0;
                         cmd_decode_success <= 1'b0;
                         cmd_read_clk <= 1'b0;
+                        byte_read_delay_counter <= 0;
+                        cmd_bytes_processed <= 0;
+                        sof_bytes_counter <= 0;
+                        eof_bytes_counter <= 0;
+                        payload_counter <= 0;
                         for (i = 0; i < MAX_CMD_PAYLOAD_BYTES; i = i + 1)
                             mem[i] <= 0;
                         bad_sof <= 1'b0;
@@ -176,7 +182,7 @@ begin
                             cmd_decode_success <= 1'b0;
                             bad_sof <= 1'b1;
                             current_byte <= data;
-                            state <= INITIAL_STATE;
+                            state <= AWAIT_CMD_CLEAR_STATE;
                         end
                     end
                     if (byte_read_delay_counter == BYTE_READ_CLK_DELAY - 1)
@@ -209,7 +215,7 @@ begin
                             cmd_processed <= 1'b1;
                             cmd_decode_success <= 1'b0;
                             current_byte <= data;
-                            state <= INITIAL_STATE;
+                            state <= AWAIT_CMD_CLEAR_STATE;
                         end
                     end
                 end
@@ -230,7 +236,7 @@ begin
                         begin
                             cmd_processed <= 1'b1;
                             cmd_decode_success <= 1'b0;
-                            state <= INITIAL_STATE;
+                            state <= AWAIT_CMD_CLEAR_STATE;
                             to_much_payload <= 1'b1;
                             current_byte <= data;
                         end
@@ -286,7 +292,7 @@ begin
                             cmd_decode_success <= 1'b0;
                             bad_eof <= 1'b1;
                             current_byte <= data;
-                            state <= INITIAL_STATE;
+                            state <= AWAIT_CMD_CLEAR_STATE;
                         end
                     end
                     if (byte_read_delay_counter == BYTE_READ_CLK_DELAY - 1)
@@ -306,8 +312,15 @@ begin
                 begin
                     cmd_processed <= 1'b0;
                     cmd_decode_success <= 1'b0;
-                    state <= AWAIT_CMD_STATE;
+                    state <= AWAIT_CMD_CLEAR_STATE;
                     cmd_read_clk <= 1'b0;
+                end
+            end
+            AWAIT_CMD_CLEAR_STATE:
+            begin
+                if (cmd_ready == 1'b0)
+                begin
+                    state <= AWAIT_CMD_STATE;
                 end
             end
             default:
