@@ -258,7 +258,7 @@ begin
     end
 
     // 1.3 check regs r0-r7 + decode success
-    if (counter == 1900)
+    if (counter == 12200)
     begin
         `ASSERT(1'b1, cmd_processed)
         `ASSERT(1'b1, cmd_decode_success)
@@ -271,11 +271,11 @@ begin
         `ASSERT(8'h66, r5)
     end
     // 1.4 clear cmd_processed by sending cmd_processed_received
-    if (counter == 2000)
+    if (counter == 12500)
     begin
         cmd_processed_received <= 1'b1;
     end
-    if (counter == 2100)
+    if (counter == 12600)
     begin
         cmd_processed_received <= 1'b0;
     end
