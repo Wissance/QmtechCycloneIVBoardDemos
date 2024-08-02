@@ -264,7 +264,7 @@ begin
                 end
                 if (cmd_read_clk == 1'b1)
                 begin
-                    if (byte_read_delay_counter == BYTE_READ_DATA_DELAY - 1)
+                    if (byte_read_delay_counter == BYTE_READ_CLK_DELAY - 1)
                     begin
                         if (data == SPACE_BYTE)
                         begin
@@ -326,7 +326,7 @@ begin
                 end
                 if (cmd_read_clk == 1'b1)
                 begin
-                    if (byte_read_delay_counter == BYTE_READ_DATA_DELAY - 1)
+                    if (byte_read_delay_counter == BYTE_READ_CLK_DELAY - 1)
                     begin
                         payload_len <= data;
                         if(data > MAX_CMD_PAYLOAD_BYTES)
@@ -476,13 +476,13 @@ begin
             end
             AWAIT_NOTIFICATION_STATE:
             begin
-                //if (cmd_processed_received == 1'b1)
-                //begin
+                if (cmd_processed_received == 1'b1)
+                begin
                     cmd_processed <= 1'b0;
                     cmd_decode_success <= 1'b0;
                     state <= AWAIT_CMD_STATE;
                     cmd_read_clk <= 1'b0;
-                //end
+                end
             end
             default:
             begin
