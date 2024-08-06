@@ -34,6 +34,7 @@
 // Baud = Bit/s, supported values: 2400, 4800, 9600, 19200, 38400, 57600, or 115200 (RS232 )
 module quick_rs232 #(
     parameter CLK_TICKS_PER_RS232_BIT = 434,             // ticks of clock per rs232 bit (i.e 434 is a value for 50MHz at clk && 115200 bit/s RS232 speed), = clk freq / rs232 speed 
+    parameter CLK_HALF_TICKS_PER_RS232_BIT = CLK_TICKS_PER_RS232_BIT / 2,
     parameter DEFAULT_BYTE_LEN = 8,                      // RS232 byte length, available values are - 5, 6, 7, 8, 9
     parameter DEFAULT_PARITY = `EVEN_PARITY,             // Parity: No, Even, Odd, Mark or Space
     parameter DEFAULT_STOP_BITS = `ONE_STOP_BIT,         // Stop bits number: 0, 1.5 or 2              
@@ -121,9 +122,9 @@ begin
         rx_data_bit_counter <= 0;
         rx_err <= 1'b0;
         TICKS_PER_UART_BIT <= CLK_TICKS_PER_RS232_BIT;
-        HALF_TICKS_PER_UART_BIT <= CLK_TICKS_PER_RS232_BIT / 2;
+        HALF_TICKS_PER_UART_BIT <= CLK_HALF_TICKS_PER_RS232_BIT;
         j <= 0;
-        TOTAL_RX_TIMEOUT <= 6400; // ~ 9600 bit/s
+        TOTAL_RX_TIMEOUT <= 6400; // ~ 9600 bit/s MUST BE HALF OF BIT
         rx_timeout <= 0;
         rx_parity_counter <= 4'b0000;
     end
