@@ -101,6 +101,7 @@ begin
         state <= INITIAL_STATE;
         cmd_bytes_processed <= 0;
         cmd_processed <= 1'b0;
+        cmd_read_clk <= 1'b0;
         //cmd_decoded <= 1'b0;
         sof_bytes_counter <= 0;
         eof_bytes_counter <= 0;

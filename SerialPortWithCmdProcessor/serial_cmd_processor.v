@@ -324,6 +324,7 @@ begin
                         rx_read_counter <= 0;
                         rx_cmd_bytes_analyzed <= 0;
                         cmd_processed_received <= 1'b0;
+                        cmd_receive_timeout <= 0;
                         cmd_ready <= 1'b1;
                         // led_bus[0] <= 0; // 0 mean led is lighting
                     end
@@ -494,6 +495,7 @@ begin
                 begin
                     device_state <= AWAIT_CMD_STATE;
                     cmd_finalize_counter <= 0;
+                    cmd_processed_received <= 1'b0;
                 end
             end
         end

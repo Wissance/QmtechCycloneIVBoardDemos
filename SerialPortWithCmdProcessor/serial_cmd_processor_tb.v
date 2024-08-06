@@ -496,9 +496,9 @@ begin
     end
     
     // 2. Send command 0xFF 0xFF 0x00 0x02 0x02 0x01 0xEE 0xEE (Read Reg 1)
-    // 1.1 First  SOF byte - 0xFF
+    // 2.1 First  SOF byte - 0xFF
     // start bit
-    if (counter == EXCHANGE_OFFSET)
+    if (counter == 2 * 399 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
     begin
         rx <= 1'b0; 
     end
@@ -508,47 +508,47 @@ begin
        rx <= 1'b1;
     end
     // b1
-    if (counter == 2 * 402 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
+    if (counter == 2 * 401 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
     begin
        rx <= 1'b1;
     end
     // b2
-    if (counter == 2 * 403 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
+    if (counter == 2 * 402 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
     begin
        rx <= 1'b1;
     end
     // b3
-    if (counter == 2 * 404 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
+    if (counter == 2 * 403 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
     begin
        rx <= 1'b1;
     end
     // b4
-    if (counter == 2 * 405 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
+    if (counter == 2 * 404 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
     begin
        rx <= 1'b1;
     end
     // b5
-    if (counter == 2 * 406 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
+    if (counter == 2 * 405 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
     begin
        rx <= 1'b1;
     end
     // b6
-    if (counter == 2 * 407 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
+    if (counter == 2 * 406 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
     begin
        rx <= 1'b1;
     end
     // b7
-    if (counter == 2 * 408 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
+    if (counter == 2 * 407 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
     begin
        rx <= 1'b1;
     end
     // parity (even)
-    if (counter == 2 * 409 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
+    if (counter == 2 * 408 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
     begin
        rx <= 1'b0;
     end
     // stop bit
-    if (counter == 2 * 410 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
+    if (counter == 2 * 409 * RS232_BIT_TICKS + EXCHANGE_OFFSET)
     begin
        rx <= 1'b1;
     end
