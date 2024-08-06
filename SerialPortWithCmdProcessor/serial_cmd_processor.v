@@ -352,12 +352,12 @@ begin
             if (cmd_decode_finished == 1'b1)
             begin
                 device_state <= CMD_CHECK_STATE;
-                // display reasons of err
-                /*led_bus[3] <= !bad_sof;
-                led_bus[4] <= !no_space;
-                led_bus[5] <= !bad_payload;
-                led_bus[6] <= !bad_eof;*/
-                led_bus <= ~ current_byte;
+                // display reasons of decode fail
+                led_bus[0] <= !bad_sof;
+                led_bus[1] <= !no_space;
+                led_bus[2] <= !bad_payload;
+                led_bus[3] <= !bad_eof;
+                // led_bus <= ~ current_byte;
                 // led_bus <= ~ bytes_processed;
                 // led_bus <= received_bytes_counter;
             end
@@ -370,16 +370,14 @@ begin
                 device_state <= CMD_DETECTED_STATE;
                 cmd_response_required <= 1'b1;
                 // cmd decoded successfully
-                //led_bus[1] <= 0;
-                //led_bus[2] <= 1;
+                led_bus[4] <= 0;
             end
             else
             begin
-                device_state <= CMD_FINALIZE_STATE;
+                device_state <= CMD_DETECTED_STATE;//CMD_FINALIZE_STATE;
                 cmd_response_required <= 1'b0;
                 // cmd decode failed
-                //led_bus[1] <= 1;
-                //led_bus[2] <= 0;
+                led_bus[4] <= 1;
             end
         end
         CMD_DETECTED_STATE:
@@ -446,14 +444,16 @@ begin
             if (cmd_response_required == 1'b1)
             begin
                 // after send set to 0
+                //if (cmd_tx_bytes_counter < cmd_response_bytes)
                 tx_transaction <= 1'b1;
                 // todo(UMV): add decoder module ...
                 if (tx_busy == 1'b0)
                 begin
                     if (cmd_tx_bytes_counter == cmd_response_bytes)
                     begin
-                        // ...stop...
                         cmd_response_required <= 1'b0;
+                        //tx_data_ready <= 1'b0;
+                        //tx_transaction <= 1'b0;
                     end
                     else
                     begin
@@ -471,13 +471,23 @@ begin
                             cmd_tx_bytes_counter <= cmd_tx_bytes_counter + 1;
                             cmd_next_byte_protect <= 1'b1;
                         end
+
+                        /*if (cmd_tx_bytes_counter == cmd_response_bytes)
+                        begin
+                            tx_transaction <= 1'b0;
+                            tx_data_ready <= 1'b0;
+                        end*/
                     end
+                    
                 end
                 // unless we don't have a buffered tx send byte after byte ...
             end
             else
             begin
                 // clean up response ...
+                tx_transaction <= 1'b0;
+                tx_data_ready <= 1'b0;
+                cmd_next_byte_protect <= 1'b0;
                 cmd_processed_received <= 1'b1;
                 cmd_finalize_counter <= cmd_finalize_counter + 1;
                 if (cmd_finalize_counter == 4'b1111)
