@@ -68,7 +68,7 @@ localparam reg [3:0] AWAIT_CMD_CLEAR_STATE = 4'b1000;
 
 localparam reg [7:0] BYTE_READ_CLK_DELAY = 16;
 localparam reg [7:0] BYTE_READ_DATA_DELAY = 8;
-localparam reg [7:0] BYTE_READ_END_DELAY = 32;
+// localparam reg [7:0] BYTE_READ_END_DELAY = 32;
 localparam reg [7:0] SOF_BYTE = 8'hff;
 localparam reg [7:0] EOF_BYTE = 8'hee;
 localparam reg [7:0] SPACE_BYTE = 0;
@@ -148,6 +148,7 @@ begin
                         sof_bytes_counter <= 0;
                         eof_bytes_counter <= 0;
                         payload_counter <= 0;
+                        payload_len <= 0;
                         for (i = 0; i < MAX_CMD_PAYLOAD_BYTES; i = i + 1)
                             mem[i] <= 0;
                         bad_sof <= 1'b0;
@@ -166,6 +167,7 @@ begin
                 if (byte_read_delay_counter == BYTE_READ_CLK_DELAY)
                 begin
                     cmd_read_clk <= ~cmd_read_clk;
+                    byte_read_delay_counter <= 0;
                 end
                 if (cmd_read_clk == 1'b1)
                 begin
@@ -186,7 +188,7 @@ begin
                             state <= AWAIT_CMD_CLEAR_STATE;
                         end
                     end
-                    if (byte_read_delay_counter == BYTE_READ_CLK_DELAY - 1)
+                    if (byte_read_delay_counter == BYTE_READ_CLK_DELAY - 2)
                     begin
                         if (sof_bytes_counter == NUMBER_OF_SOF_BYTES)
                             state <= CMD_SPACE_PROCESSING_STATE;
@@ -199,10 +201,11 @@ begin
                 if (byte_read_delay_counter == BYTE_READ_CLK_DELAY)
                 begin
                     cmd_read_clk <= ~cmd_read_clk;
+                    byte_read_delay_counter <= 0;
                 end
                 if (cmd_read_clk == 1'b1)
                 begin
-                    if (byte_read_delay_counter == BYTE_READ_CLK_DELAY - 1)
+                    if (byte_read_delay_counter == BYTE_READ_CLK_DELAY - 2)
                     begin
                         if (data == SPACE_BYTE)
                         begin
@@ -227,10 +230,11 @@ begin
                 if (byte_read_delay_counter == BYTE_READ_CLK_DELAY)
                 begin
                     cmd_read_clk <= ~cmd_read_clk;
+                    byte_read_delay_counter <= 0;
                 end
                 if (cmd_read_clk == 1'b1)
                 begin
-                    if (byte_read_delay_counter == BYTE_READ_CLK_DELAY - 1)
+                    if (byte_read_delay_counter == BYTE_READ_CLK_DELAY - 2)
                     begin
                         payload_len <= data;
                         if(data > MAX_CMD_PAYLOAD_BYTES)
@@ -255,6 +259,7 @@ begin
                 if (byte_read_delay_counter == BYTE_READ_CLK_DELAY)
                 begin
                     cmd_read_clk <= ~cmd_read_clk;
+                    byte_read_delay_counter <= 0;
                 end
                 if (cmd_read_clk == 1'b1)
                 begin
@@ -263,7 +268,7 @@ begin
                         mem[payload_counter] <= data;
                         payload_counter <= payload_counter + 1;
                     end
-                    if (byte_read_delay_counter == BYTE_READ_CLK_DELAY - 1)
+                    if (byte_read_delay_counter == BYTE_READ_CLK_DELAY - 2)
                     begin
                         if (payload_counter == payload_len)
                             state <= CMD_STOP_PROCESSING_STATE;
@@ -276,6 +281,7 @@ begin
                 if (byte_read_delay_counter == BYTE_READ_CLK_DELAY)
                 begin
                     cmd_read_clk <= ~cmd_read_clk;
+                    byte_read_delay_counter <= 0;
                 end
                 if (cmd_read_clk == 1'b1)
                 begin
@@ -296,7 +302,7 @@ begin
                             state <= AWAIT_CMD_CLEAR_STATE;
                         end
                     end
-                    if (byte_read_delay_counter == BYTE_READ_CLK_DELAY - 1)
+                    if (byte_read_delay_counter == BYTE_READ_CLK_DELAY - 2)
                     begin
                         if (eof_bytes_counter == NUMBER_OF_EOF_BYTES)
                         begin
@@ -314,7 +320,6 @@ begin
                     cmd_processed <= 1'b0;
                     cmd_decode_success <= 1'b0;
                     state <= AWAIT_CMD_CLEAR_STATE;
-                    cmd_read_clk <= 1'b0;
                 end
             end
             AWAIT_CMD_CLEAR_STATE:
@@ -322,6 +327,8 @@ begin
                 if (cmd_ready == 1'b0)
                 begin
                     state <= AWAIT_CMD_STATE;
+                    byte_read_delay_counter <= 0;
+                    cmd_read_clk <= 1'b0;
                 end
             end
             default:

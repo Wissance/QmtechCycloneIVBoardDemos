@@ -280,8 +280,206 @@ begin
         cmd_processed_received <= 1'b0;
     end
     // 2.1 init another valid cmd
+    // SOF=0xFF
+    if (counter == 12650)
+    begin
+        in_data <= 8'hff;
+    end
+    if (counter == 12652)
+    begin
+        push <= 1'b1;
+    end
+    if (counter == 12654)
+    begin
+        push <= 1'b0;
+    end
+
+    // SOF=0xFF
+    if (counter == 12656)
+    begin
+        in_data <= 8'hff;
+    end
+    if (counter == 12658)
+    begin
+        push <= 1'b1;
+    end
+    if (counter == 12660)
+    begin
+        push <= 1'b0;
+    end
+
+    // SPACE=0x00
+    if (counter == 12662)
+    begin
+        in_data <= 0;
+    end
+    if (counter == 12664)
+    begin
+        push <= 1'b1;
+    end
+    if (counter == 12666)
+    begin
+        push <= 1'b0;
+    end
+
+    // PAYLOAD_LEN=0x06
+    if (counter == 12668)
+    begin
+        in_data <= 6;
+    end
+    if (counter == 12670)
+    begin
+        push <= 1'b1;
+    end
+    if (counter == 12672)
+    begin
+        push <= 1'b0;
+    end
+
+    // PAYLOAD_BYTE 0
+    if (counter == 12674)
+    begin
+        in_data <= 8'h10;
+    end
+    if (counter == 12676)
+    begin
+        push <= 1'b1;
+    end
+    if (counter == 12678)
+    begin
+        push <= 1'b0;
+    end
+
+    // PAYLOAD_BYTE 1
+    if (counter == 12680)
+    begin
+        in_data <= 8'h20;
+    end
+    if (counter == 12682)
+    begin
+        push <= 1'b1;
+    end
+    if (counter == 12684)
+    begin
+        push <= 1'b0;
+    end
+
+    // PAYLOAD_BYTE 2
+    if (counter == 12686)
+    begin
+        in_data <= 8'h30;
+    end
+    if (counter == 12688)
+    begin
+        push <= 1'b1;
+    end
+    if (counter == 12690)
+    begin
+        push <= 1'b0;
+    end
+
+    // PAYLOAD_BYTE 3
+    if (counter == 12692)
+    begin
+        in_data <= 8'h40;
+    end
+    if (counter == 12694)
+    begin
+        push <= 1'b1;
+    end
+    if (counter == 12696)
+    begin
+        push <= 1'b0;
+    end
+
+    // PAYLOAD_BYTE 4
+    if (counter == 12698)
+    begin
+        in_data <= 8'h50;
+    end
+    if (counter == 12700)
+    begin
+        push <= 1'b1;
+    end
+    if (counter == 12702)
+    begin
+        push <= 1'b0;
+    end
+
+    // PAYLOAD_BYTE 5
+    if (counter == 12704)
+    begin
+        in_data <= 8'h60;
+    end
+    if (counter == 12706)
+    begin
+        push <= 1'b1;
+    end
+    if (counter == 12708)
+    begin
+        push <= 1'b0;
+    end
+
+    // EOF=0xEE
+    if (counter == 12710)
+    begin
+        in_data <= 8'hee;
+    end
+    if (counter == 12712)
+    begin
+        push <= 1'b1;
+    end
+    if (counter == 12714)
+    begin
+        push <= 1'b0;
+    end
+
+    // EOF=0xEE
+    if (counter == 12716)
+    begin
+        in_data <= 8'hee;
+    end
+    if (counter == 12718)
+    begin
+        push <= 1'b1;
+    end
+    if (counter == 12720)
+    begin
+        push <= 1'b0;
+    end
     // 2.2 start decode
-    // 2.3 check regs r0-r7 + decode success
+    // 2.2.1 notify that we've received command
+    if (counter == 12722)
+    begin
+        cmd_ready <= 1'b1;
+    end
+    // 2.2.2 notify that we've received command
+    if (counter == 12730)
+    begin
+        cmd_ready <= 1'b0;
+    end
+    // 2.3 check registers r0-r7
+    if (counter == 14000)
+    begin
+        `ASSERT(1'b1, cmd_processed)
+        `ASSERT(1'b1, cmd_decode_success)
+
+        `ASSERT(8'h10, r0)
+        `ASSERT(8'h20, r1)
+        `ASSERT(8'h30, r2)
+        `ASSERT(8'h40, r3)
+        `ASSERT(8'h50, r4)
+        `ASSERT(8'h60, r5)
+    end
+    // 2.4 clear cmd_processed by sending cmd_processed_received
+    if (counter == 14100)
+    begin
+        cmd_processed_received <= 1'b1;
+    end
+    if (counter == 14200)
+    begin
+        cmd_processed_received <= 1'b0;
+    end
     // 3.1 init invalid cmd by format sof missing
     // 3.2 start decode
     // 3.3 check decode fails

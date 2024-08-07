@@ -55,6 +55,7 @@ localparam reg [3:0] CMD_DETECTED_STATE = 4'b0100;
 localparam reg [3:0] CMD_EXECUTE_STATE = 4'b0101;
 localparam reg [3:0] CMD_FINALIZE_STATE = 4'b0110;
 localparam reg [3:0] SEND_RESPONSE_STATE = 4'b0111;
+localparam reg [3:0] CLEANUP_STATE = 4'b1000;
 
 localparam reg [3:0]  MIN_CMD_LENGTH = 8;
 localparam reg [15:0] MAX_TIMEOUT_BETWEEN_BYTES = 11000; // in cycles of 50MHz
@@ -315,7 +316,7 @@ begin
             if (cmd_receive_timeout == MAX_TIMEOUT_BETWEEN_BYTES)  // 
             begin
                 // received_bytes_counter is a counter of received bytes in separate always block
-                if (received_bytes_counter == cmd_bytes_counter)
+                if (received_bytes_counter == cmd_bytes_counter && cmd_bytes_counter > 0)
                 begin
                     // 1. pause after BATCH, if we have enough bytes - analyze
                     if (cmd_bytes_counter >= MIN_CMD_LENGTH)
@@ -375,7 +376,7 @@ begin
             end
             else
             begin
-                device_state <= CMD_DETECTED_STATE;//CMD_FINALIZE_STATE;
+                device_state <= CMD_FINALIZE_STATE;
                 cmd_response_required <= 1'b0;
                 // cmd decode failed
                 led_bus[4] <= 1;
@@ -453,8 +454,6 @@ begin
                     if (cmd_tx_bytes_counter == cmd_response_bytes)
                     begin
                         cmd_response_required <= 1'b0;
-                        //tx_data_ready <= 1'b0;
-                        //tx_transaction <= 1'b0;
                     end
                     else
                     begin
@@ -472,12 +471,6 @@ begin
                             cmd_tx_bytes_counter <= cmd_tx_bytes_counter + 1;
                             cmd_next_byte_protect <= 1'b1;
                         end
-
-                        /*if (cmd_tx_bytes_counter == cmd_response_bytes)
-                        begin
-                            tx_transaction <= 1'b0;
-                            tx_data_ready <= 1'b0;
-                        end*/
                     end
                     
                 end
@@ -493,11 +486,17 @@ begin
                 cmd_finalize_counter <= cmd_finalize_counter + 1;
                 if (cmd_finalize_counter == 4'b1111)
                 begin
-                    device_state <= AWAIT_CMD_STATE;
+                    device_state <= CLEANUP_STATE;
                     cmd_finalize_counter <= 0;
                     cmd_processed_received <= 1'b0;
                 end
             end
+        end
+        CLEANUP_STATE:
+        begin
+            cmd_ready <= 1'b0;
+            cmd_receive_timeout <= 0;
+            device_state <= INITIAL_STATE;
         end
         default:
         begin
