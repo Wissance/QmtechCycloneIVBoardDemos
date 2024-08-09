@@ -256,6 +256,7 @@ begin
         rx_cmd_bytes_analyzed <= 0;
         // rs232 tx regs
         tx_transaction <= 1'b0;
+        tx_data_ready <= 1'b0;
         tx_data <= 8'h00;
         // cmd && memory regs
         cmd_response_required <= 1'b0;
