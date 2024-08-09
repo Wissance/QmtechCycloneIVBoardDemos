@@ -308,6 +308,7 @@ begin
                 cmd_processed_received <= 1'b0;
                 cmd_response_bytes <= 0;
                 cmd_tx_bytes_counter <= 0;
+                cmd_finalize_counter <= 0;
             end
         end
         AWAIT_CMD_STATE:

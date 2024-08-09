@@ -329,6 +329,8 @@ begin
                     state <= AWAIT_CMD_STATE;
                     byte_read_delay_counter <= 0;
                     cmd_read_clk <= 1'b0;
+                    cmd_processed <= 1'b0;
+                    cmd_decode_success <= 1'b0;
                 end
             end
             default:
