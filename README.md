@@ -54,6 +54,8 @@ In this demo (`SerialPortWithCmdProcessor` folder/project) we are having followi
 2. *Get 4-byte register* - (cmd code `0x02`), i.e. reading of register of index `0x03` :
 `0xFF 0xFF 0x00 0x02 0x02 0x03 0xEE 0xEE`
 
+![Interaction by commands in Zerial](/docs/img/zerial_cmd_commands.png)
+
 #### 2.2.1 Testbenches diagrams demonstrating how it works:
 
 Example of how decoder works, we haven't yet encoder (maybe will be in future)
