@@ -256,11 +256,13 @@ begin
         rx_cmd_bytes_analyzed <= 0;
         // rs232 tx regs
         tx_transaction <= 1'b0;
+        tx_data_ready <= 1'b0;
         tx_data <= 8'h00;
         // cmd && memory regs
         cmd_response_required <= 1'b0;
         cmd_processed_received <= 1'b0;
         cmd_finalize_counter <= 0;
+        cmd_bytes_counter <= 0;
         // TODO(UMV): make 8 const -> REG_MEMORY_DEPTH
         for (c = 0; c < 8; c = c + 1)
             memory[c] <= 32'h00000000;
@@ -307,6 +309,7 @@ begin
                 cmd_processed_received <= 1'b0;
                 cmd_response_bytes <= 0;
                 cmd_tx_bytes_counter <= 0;
+                cmd_finalize_counter <= 0;
             end
         end
         AWAIT_CMD_STATE:
@@ -366,7 +369,9 @@ begin
         end
         CMD_CHECK_STATE:
         begin
-            cmd_ready <= 1'b0;
+            // cmd_ready <= 1'b0;
+            cmd_finalize_counter <= 0;
+
             if (cmd_decode_success == 1'b1)
             begin
                 device_state <= CMD_DETECTED_STATE;
@@ -377,6 +382,7 @@ begin
             else
             begin
                 device_state <= CMD_FINALIZE_STATE;
+                //cmd_processed_received <= 1'b1; // ??
                 cmd_response_required <= 1'b0;
                 // cmd decode failed
                 led_bus[4] <= 1;
@@ -439,6 +445,7 @@ begin
                     cmd_response_bytes <= 7;
                 end
             end
+            cmd_processed_received <= 1'b1;
         end
         CMD_FINALIZE_STATE:
         begin
@@ -482,7 +489,6 @@ begin
                 tx_transaction <= 1'b0;
                 tx_data_ready <= 1'b0;
                 cmd_next_byte_protect <= 1'b0;
-                cmd_processed_received <= 1'b1;
                 cmd_finalize_counter <= cmd_finalize_counter + 1;
                 if (cmd_finalize_counter == 4'b1111)
                 begin

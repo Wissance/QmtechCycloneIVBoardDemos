@@ -102,7 +102,7 @@ begin
         cmd_bytes_processed <= 0;
         cmd_processed <= 1'b0;
         cmd_read_clk <= 1'b0;
-        //cmd_decoded <= 1'b0;
+        // cmd_decoded <= 1'b0;
         sof_bytes_counter <= 0;
         eof_bytes_counter <= 0;
         payload_len <= 0;
@@ -326,6 +326,7 @@ begin
             begin
                 if (cmd_ready == 1'b0)
                 begin
+                    cmd_processed <= 1'b0;
                     state <= AWAIT_CMD_STATE;
                     byte_read_delay_counter <= 0;
                     cmd_read_clk <= 1'b0;
